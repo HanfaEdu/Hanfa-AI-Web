@@ -371,7 +371,7 @@
         // 🌟 CONFIGURATION
         // ==========================================
         const GOOGLE_CLIENT_ID = '655941024907-d4n5t4f06kemdka2gav9j2e3629mecoj.apps.googleusercontent.com';
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxpA8XjiW2k0ZSN9JLc2_vPVHUxjxw5AgmWar7oDe8aJccLLuFj-S-MhcEMWn68m0N0-w/exec'; // Ganti dengan URL Deploy /exec
+        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxpA8XjiW2k0ZSN9JLc2_vPVHUxjxw5AgmWar7oDe8aJccLLuFj-S-MhcEMWn68m0N0-w/exec'; // URL Deploy /exec
         
         let tokenClient;
         let userAccessToken = null;
@@ -543,7 +543,7 @@
                     params: payloadData.params
                 };
 
-                if(GAS_API_URL === 'https://script.google.com/macros/s/AKfycbxpA8XjiW2k0ZSN9JLc2_vPVHUxjxw5AgmWar7oDe8aJccLLuFj-S-MhcEMWn68m0N0-w/exec') {
+                if(GAS_API_URL === 'GANTI_DENGAN_URL_WEB_APP_GAS_ANDA') {
                     return this.simulateBackend(finalPayload);
                 }
 
@@ -993,7 +993,7 @@
                 `);
 
                 try {
-                    if(GAS_API_URL === 'https://script.google.com/macros/s/AKfycbxpA8XjiW2k0ZSN9JLc2_vPVHUxjxw5AgmWar7oDe8aJccLLuFj-S-MhcEMWn68m0N0-w/exec') {
+                    if(GAS_API_URL === 'GANTI_DENGAN_URL_WEB_APP_GAS_ANDA') {
                         setTimeout(() => {
                             let prefix = type === 'harder' ? 'SOAL HOTS BARU: ' : type === 'local' ? 'KONTEKS LOKAL: ' : type === 'VARIASI' ? 'VARIASI BARU: ' : 'SOAL LOTS BARU: ';
                             StateModule.data.soalData[index].tanya = prefix + StateModule.data.soalData[index].tanya;
@@ -1030,7 +1030,7 @@
                 UIModule.showToast(`⏳ Mengirim instruksi pembuatan ${type} ke sistem...`, "fas fa-sync fa-spin");
                 
                 try {
-                    if(GAS_API_URL === 'https://script.google.com/macros/s/AKfycbxpA8XjiW2k0ZSN9JLc2_vPVHUxjxw5AgmWar7oDe8aJccLLuFj-S-MhcEMWn68m0N0-w/exec') {
+                    if(GAS_API_URL === 'GANTI_DENGAN_URL_WEB_APP_GAS_ANDA') {
                         setTimeout(() => UIModule.showToast(`✅ Simulasi Ekspor ${type} Berhasil.`, "fas fa-info-circle"), 1500);
                         return;
                     }
