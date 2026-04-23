@@ -368,6 +368,7 @@
         const GOOGLE_CLIENT_ID = '655941024907-d4n5t4f06kemdka2gav9j2e3629mecoj.apps.googleusercontent.com';
         
         // 🔴 PASTE URL WEB APP GOOGLE SCRIPT BAPAK DI BAWAH INI
+        // Masukkan URL yang panjang dan berakhiran /exec
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyLfHcTvYuqimnFObffeUkbUY_IGZHUdaxGPQLJpuczZqdSA4rIEjytUzZPKAALevoYJw/exec'; 
         
         let tokenClient;
@@ -521,8 +522,14 @@
                 };
 
                 // Bypass jika Guest Mode
-                if (userAccessToken === "DUMMY_TOKEN_PREVIEW" || GAS_API_URL.includes('https://script.google.com/macros/s/AKfycbyLfHcTvYuqimnFObffeUkbUY_IGZHUdaxGPQLJpuczZqdSA4rIEjytUzZPKAALevoYJw/exec')) {
+                if (userAccessToken === "DUMMY_TOKEN_PREVIEW") {
                     return this.simulateBackend(finalPayload);
+                }
+
+                // 🚨 PERINGATAN KERAS JIKA LUPA GANTI URL
+                if (GAS_API_URL.includes('GANTI_DENGAN_URL') || GAS_API_URL.trim() === '') {
+                    UIModule.showToast("❌ ERROR: URL /exec belum dimasukkan ke GitHub!", "fas fa-exclamation-triangle");
+                    throw new Error("Anda lupa mengganti tulisan GAS_API_URL di GitHub dengan URL /exec yang panjang dari Google Script.");
                 }
 
                 const timeoutId = setTimeout(() => {
@@ -732,6 +739,7 @@
                 `).join('');
             },
 
+            // SAFE RENDER: Error Boundary + XSS Protection
             renderSoalFromState: function() {
                 const area = document.getElementById('render-area');
                 try {
@@ -932,6 +940,7 @@
             enableEdit: function(index) {
                 const container = document.getElementById(`tanya-container-${index}`);
                 const currentText = StateModule.data.soalData[index].tanya;
+                // Aman karena ini value internal textarea (dan sudah lolos parse awal)
                 container.innerHTML = `
                     <textarea id="edit-input-${index}" class="edit-input" rows="3">${currentText}</textarea>
                     <div class="flex gap-2 mt-2">
@@ -958,7 +967,7 @@
                 `);
 
                 try {
-                    if(GAS_API_URL === 'INTERNAL_GAS_MODE' || GAS_API_URL.includes('https://script.google.com/macros/s/AKfycbyLfHcTvYuqimnFObffeUkbUY_IGZHUdaxGPQLJpuczZqdSA4rIEjytUzZPKAALevoYJw/exec')) {
+                    if(GAS_API_URL.includes('GANTI_DENGAN_URL')) {
                         setTimeout(() => {
                             let prefix = type === 'harder' ? 'SOAL HOTS BARU: ' : type === 'local' ? 'KONTEKS LOKAL: ' : type === 'VARIASI' ? 'VARIASI BARU: ' : 'SOAL LOTS BARU: ';
                             StateModule.data.soalData[index].tanya = prefix + StateModule.data.soalData[index].tanya;
@@ -986,6 +995,7 @@
                         throw new Error(res?.msg || "Gagal menyimpan respons baru.");
                     }
                 } catch(e) {
+                    // 🧹 Cleanup Memory Leak secara eksplisit jika error
                     document.getElementById(`loading-overlay-${index}`)?.remove();
                     UIModule.showToast("❌ Gagal merespon server: " + e.message, "fas fa-times");
                 }
@@ -994,7 +1004,7 @@
                 UIModule.showToast(`⏳ Mengirim instruksi pembuatan ${type} ke sistem...`, "fas fa-sync fa-spin");
                 
                 try {
-                    if(GAS_API_URL === 'INTERNAL_GAS_MODE' || GAS_API_URL.includes('https://script.google.com/macros/s/AKfycbyLfHcTvYuqimnFObffeUkbUY_IGZHUdaxGPQLJpuczZqdSA4rIEjytUzZPKAALevoYJw/exec')) {
+                    if(GAS_API_URL.includes('GANTI_DENGAN_URL')) {
                         setTimeout(() => UIModule.showToast(`✅ Simulasi Ekspor ${type} Berhasil.`, "fas fa-info-circle"), 1500);
                         return;
                     }
