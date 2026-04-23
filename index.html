@@ -368,7 +368,6 @@
         const GOOGLE_CLIENT_ID = '655941024907-d4n5t4f06kemdka2gav9j2e3629mecoj.apps.googleusercontent.com';
         
         // 🔴 PASTE URL WEB APP GOOGLE SCRIPT BAPAK DI BAWAH INI
-        // Masukkan URL yang panjang dan berakhiran /exec
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyLfHcTvYuqimnFObffeUkbUY_IGZHUdaxGPQLJpuczZqdSA4rIEjytUzZPKAALevoYJw/exec'; 
         
         let tokenClient;
@@ -1053,6 +1052,7 @@
             },
             copyText: async function(btn, text) {
                 try {
+                    // Menerapkan Fallback Clipboard Profesional
                     await Utils.copyToClipboard(text);
                     const icon = btn.querySelector('i');
                     icon.className = 'fas fa-check text-green-600';
