@@ -367,7 +367,7 @@
         // ==========================================
         const GOOGLE_CLIENT_ID = '655941024907-d4n5t4f06kemdka2gav9j2e3629mecoj.apps.googleusercontent.com';
         
-        // 🔴 PASTE URL WEB APP GOOGLE SCRIPT BAPAK DI BAWAH INI
+        // ✅ URL GAS BAPAK SUDAH DIPASANG PERMANEN (Tidak perlu ganti lagi)
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyLfHcTvYuqimnFObffeUkbUY_IGZHUdaxGPQLJpuczZqdSA4rIEjytUzZPKAALevoYJw/exec'; 
         
         let tokenClient;
@@ -459,6 +459,15 @@
                                 .then(data => {
                                     userEmailStr = data.email;
                                     document.getElementById('user-email').innerText = Utils.escapeHTML(data.email);
+                                    
+                                    // 🌟 ANTI-JEBAKAN CACHE: Menghapus memori simulasi sebelumnya saat berhasil login
+                                    if(StateModule.data.soalData && StateModule.data.soalData.length > 0 && String(StateModule.data.soalData[0].tanya).includes('ilustrasi di bawah ini')) {
+                                        StateModule.data.soalData = [];
+                                        StateModule.save();
+                                        document.getElementById('view-result').classList.add('hidden');
+                                        document.getElementById('view-empty').classList.remove('hidden');
+                                    }
+
                                     UIModule.showToast(`Selamat datang, ${Utils.escapeHTML(data.name)}!`, "fas fa-check-circle");
                                 });
                             }
@@ -488,7 +497,7 @@
         };
 
         // ==========================================
-        // 🌟 MODULE 3: API & NETWORK (UNTUK VERCEL)
+        // 🌟 MODULE 3: API & NETWORK (HACKER CORS FIX)
         // ==========================================
         const APIModule = {
             fetchWithRetry: async function(url, options, retries = 2) {
@@ -525,7 +534,6 @@
                     return this.simulateBackend(finalPayload);
                 }
 
-                // 🚨 PERINGATAN KERAS JIKA LUPA GANTI URL
                 if (GAS_API_URL.includes('GANTI_DENGAN_URL') || GAS_API_URL.trim() === '') {
                     UIModule.showToast("❌ ERROR: URL /exec belum dimasukkan ke GitHub!", "fas fa-exclamation-triangle");
                     throw new Error("Anda lupa mengganti tulisan GAS_API_URL di GitHub dengan URL /exec yang panjang dari Google Script.");
@@ -536,9 +544,12 @@
                 }, 8000);
 
                 try {
-                    // Fetch murni untuk Vercel ke GAS Endpoint
+                    // 🌟 TRIK HACKER CORS: Mengirim sebagai text/plain agar Google tidak memblokirnya dengan OPTIONS Preflight
                     const response = await this.fetchWithRetry(GAS_API_URL, {
                         method: 'POST',
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8'
+                        },
                         body: JSON.stringify(finalPayload)
                     });
                     
@@ -555,7 +566,7 @@
                 } catch (e) {
                     clearTimeout(timeoutId);
                     console.error("[API Error Details]:", e);
-                    throw new Error(e.message || "Gagal menghubungi server V16.");
+                    throw new Error(e.message || "Gagal menghubungi server V16. Periksa koneksi internet Anda.");
                 }
             },
             
