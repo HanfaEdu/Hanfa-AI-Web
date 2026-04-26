@@ -42,24 +42,39 @@
 
     <!-- 🌟 MODAL LIMIT KUOTA (SAAS UPGRADE) 🌟 -->
     <div id="upgrade-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-[90%] text-center transform transition-transform scale-95 border-t-8 border-indigo-500">
-            <div class="w-20 h-20 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                <i class="fas fa-crown text-4xl"></i>
+        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-[90%] text-center transform transition-transform scale-95 border-t-8 border-indigo-500 overflow-y-auto max-h-[90vh]">
+            <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <i class="fas fa-crown text-3xl"></i>
             </div>
-            <h2 class="text-2xl font-extrabold text-slate-800">Limit Harian Tercapai!</h2>
-            <p class="text-slate-500 mt-3 mb-6 text-sm font-medium leading-relaxed">Anda telah menggunakan semua poin AI Hanfa Edu untuk hari ini. Poin akan otomatis di-reset besok pagi.</p>
+            <h2 class="text-xl font-extrabold text-slate-800">Limit Harian Tercapai!</h2>
+            <p class="text-slate-500 mt-2 mb-5 text-sm font-medium leading-relaxed">Anda telah menggunakan semua poin AI Hanfa Edu untuk hari ini. Poin akan otomatis di-reset besok pagi.</p>
             
-            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left">
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-5 text-left">
                 <p class="text-xs font-bold text-slate-600 mb-2"><i class="fas fa-bolt text-amber-500 mr-2"></i> Keuntungan Hanfa PRO:</p>
                 <ul class="text-xs text-slate-500 space-y-2">
-                    <li><i class="fas fa-check text-green-500 mr-2"></i> Kuota 50 Poin AI Per Hari</li>
-                    <li><i class="fas fa-check text-green-500 mr-2"></i> Akses Mode Analisis Tingkat Tinggi</li>
+                    <li><i class="fas fa-check text-green-500 mr-2"></i> Kuota 50 Poin AI Per Hari (5x Lipat)</li>
+                    <li><i class="fas fa-check text-green-500 mr-2"></i> Akses Analisis HOTS Tingkat Tinggi</li>
                     <li><i class="fas fa-check text-green-500 mr-2"></i> Prioritas Antrean Server (Super Cepat)</li>
                 </ul>
             </div>
 
-            <button onclick="window.open('https://wa.me/6285640116543?text=Halo%20Admin%20Hanfa,%20saya%20ingin%20upgrade%20ke%20versi%20PRO', '_blank')" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all mb-3">
-                <i class="fab fa-whatsapp mr-2"></i> Hubungi Admin (Upgrade PRO)
+            <!-- Harga Promo di Modal -->
+            <div class="grid grid-cols-2 gap-3 mb-5">
+                <div class="border border-slate-200 rounded-xl p-3 text-center bg-white relative">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">6 BULAN</div>
+                    <div class="text-xs text-slate-400 line-through decoration-red-500 decoration-2">Rp150.000</div>
+                    <div class="text-lg font-black text-indigo-600">Rp59rb</div>
+                </div>
+                <div class="border-2 border-yellow-400 rounded-xl p-3 text-center bg-gradient-to-b from-yellow-50 to-amber-50 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded-bl-lg">BEST</div>
+                    <div class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">1 TAHUN</div>
+                    <div class="text-xs text-slate-400 line-through decoration-red-500 decoration-2">Rp250.000</div>
+                    <div class="text-lg font-black text-amber-600">Rp99rb</div>
+                </div>
+            </div>
+
+            <button onclick="window.open('https://wa.me/6285640116543?text=Halo%20Admin%20Hanfa,%20saya%20ingin%20upgrade%20ke%20versi%20PRO', '_blank')" class="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all mb-3 text-sm">
+                <i class="fab fa-whatsapp mr-2"></i> Ambil Diskon via WhatsApp
             </button>
             <button onclick="document.getElementById('upgrade-modal').classList.add('opacity-0', 'pointer-events-none')" class="w-full bg-white text-slate-500 border border-slate-200 font-bold py-3 rounded-xl hover:bg-slate-50 transition-all text-xs">
                 Kembali & Menunggu Reset
@@ -233,7 +248,6 @@
                                     <i class="fas fa-palette text-indigo-500"></i> Visualisasi Konten
                                 </label>
                                 <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50 cursor-pointer hover:bg-indigo-50 hover:border-indigo-200 transition-all select-none">
-                                    <!-- FIX: Unchecked by default as requested -->
                                     <input type="checkbox" id="include-visuals" class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300">
                                     <div class="flex-1">
                                         <span class="text-sm font-bold text-slate-700 block">Sertakan Ilustrasi / Gambar</span>
@@ -415,7 +429,7 @@
                             </div>
                         </div>
 
-                        <!-- 🌟 BANNER UPGRADE PRO 🌟 -->
+                        <!-- 🌟 BANNER UPGRADE PRO (DENGAN HARGA CORET) 🌟 -->
                         <div class="bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 rounded-[2rem] p-8 md:p-10 text-white relative overflow-hidden shadow-2xl mt-8 border border-indigo-700">
                             <!-- Dekorasi Latar Banner -->
                             <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
@@ -425,32 +439,38 @@
                             <div class="relative z-10 flex flex-col md:flex-row gap-8 items-center">
                                 <div class="flex-1 text-center md:text-left">
                                     <div class="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest text-indigo-100 mb-5 border border-white/20 backdrop-blur-sm">
-                                        <i class="fas fa-star text-yellow-400"></i> Penawaran Eksklusif PRO
+                                        <i class="fas fa-star text-yellow-400"></i> Penawaran Eksklusif Early Bird
                                     </div>
                                     <h3 class="text-3xl md:text-4xl font-black mb-4 leading-tight">Tingkatkan Kapasitas AI Anda!</h3>
-                                    <p class="text-indigo-200 font-medium mb-8 text-sm md:text-base leading-relaxed max-w-lg">Bebaskan kreativitas mengajar Anda. Dapatkan batas poin yang jauh lebih tinggi dan akses fitur kelas dunia untuk menyusun bahan ajar luar biasa setiap hari.</p>
+                                    <p class="text-indigo-200 font-medium mb-6 text-sm md:text-base leading-relaxed max-w-lg">Dapatkan batas poin 5x lipat lebih tinggi dan akses fitur analisis HOTS kelas dunia. Susun bahan ajar luar biasa setiap hari tanpa khawatir kehabisan kuota.</p>
                                     
-                                    <ul class="space-y-4 mb-10 text-sm md:text-base font-semibold text-indigo-50">
-                                        <li class="flex items-center gap-4 justify-center md:justify-start">
-                                            <div class="w-8 h-8 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center"><i class="fas fa-check"></i></div>
-                                            Kuota 50 Poin AI Harian (5x Lipat!)
-                                        </li>
-                                        <li class="flex items-center gap-4 justify-center md:justify-start">
-                                            <div class="w-8 h-8 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center"><i class="fas fa-check"></i></div>
-                                            Akses Mode HOTS / Analisis Tingkat Tinggi
-                                        </li>
-                                        <li class="flex items-center gap-4 justify-center md:justify-start">
-                                            <div class="w-8 h-8 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center"><i class="fas fa-check"></i></div>
-                                            Prioritas Antrean Server (Super Cepat)
-                                        </li>
-                                    </ul>
+                                    <!-- 🌟 BLOK HARGA PROMO 🌟 -->
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-lg mx-auto md:mx-0">
+                                        <!-- Paket 6 Bulan -->
+                                        <div class="bg-white/10 border border-white/20 rounded-2xl p-5 hover:bg-white/20 transition-all text-left">
+                                            <div class="text-indigo-200 text-[10px] font-bold uppercase tracking-widest mb-1">Paket 6 Bulan</div>
+                                            <div class="text-sm text-slate-300 line-through decoration-red-500 decoration-2 mb-1">Rp150.000</div>
+                                            <div class="flex items-end gap-1 mb-2">
+                                                <span class="text-2xl font-black text-white">Rp59.000</span>
+                                            </div>
+                                            <div class="text-[10px] text-indigo-100 bg-indigo-500/40 inline-block px-2 py-1 rounded font-bold">Jatuhnya Rp9.800/bln</div>
+                                        </div>
+                                        
+                                        <!-- Paket 1 Tahun -->
+                                        <div class="bg-gradient-to-br from-yellow-400 to-amber-500 border-2 border-yellow-300 rounded-2xl p-5 transform sm:-translate-y-2 shadow-xl relative overflow-hidden text-left">
+                                            <div class="absolute top-0 right-0 bg-red-600 text-white text-[9px] font-black px-3 py-1 rounded-bl-lg shadow-sm">BEST SELLER</div>
+                                            <div class="text-yellow-900 text-[10px] font-bold uppercase tracking-widest mb-1">Paket 1 Tahun</div>
+                                            <div class="text-sm text-yellow-800 line-through decoration-red-600 decoration-2 mb-1">Rp250.000</div>
+                                            <div class="flex items-end gap-1 mb-2">
+                                                <span class="text-3xl font-black text-yellow-950">Rp99.000</span>
+                                            </div>
+                                            <div class="text-[10px] text-amber-900 bg-white/40 inline-block px-2 py-1 rounded font-bold shadow-sm">Jatuhnya cuma Rp8.250/bln!</div>
+                                        </div>
+                                    </div>
 
-                                    <button onclick="window.open('https://wa.me/6285640116543?text=Halo%20Admin%20Hanfa,%20saya%20tertarik%20untuk%20upgrade%20ke%20versi%20PRO.%20Bisa%20minta%20info%20lebih%20lanjut?', '_blank')" class="bg-gradient-to-r from-yellow-400 to-amber-500 text-yellow-950 hover:from-yellow-300 hover:to-amber-400 font-black py-4 px-8 rounded-2xl shadow-[0_0_20px_rgba(250,204,21,0.4)] transition-transform hover:scale-105 active:scale-95 w-full md:w-auto flex items-center justify-center md:inline-flex gap-3 text-lg">
-                                        <i class="fab fa-whatsapp text-xl"></i> Hubungi Admin Sekarang
+                                    <button onclick="window.open('https://wa.me/6285640116543?text=Halo%20Admin%20Hanfa,%20saya%20tertarik%20untuk%20upgrade%20ke%20versi%20PRO%20(Harga%20Promo).%20Bisa%20minta%20info%20lebih%20lanjut?', '_blank')" class="bg-gradient-to-r from-yellow-400 to-amber-500 text-yellow-950 hover:from-yellow-300 hover:to-amber-400 font-black py-4 px-8 rounded-2xl shadow-[0_0_20px_rgba(250,204,21,0.4)] transition-transform hover:scale-105 active:scale-95 w-full md:w-auto flex items-center justify-center md:inline-flex gap-3 text-base md:text-lg">
+                                        <i class="fab fa-whatsapp text-xl"></i> Klaim Diskon Sekarang
                                     </button>
-                                </div>
-                                <div class="w-48 h-48 md:w-64 md:h-64 flex-shrink-0 hidden md:block">
-                                    <img src="logo.png" alt="Hanfa PRO" class="w-full h-full object-cover rounded-3xl shadow-2xl rotate-6 border-4 border-white/10" onerror="this.src='https://placehold.co/300x300?text=PRO';">
                                 </div>
                             </div>
                         </div>
@@ -1054,7 +1074,7 @@
                                             </div>
                                         </div>
                                         <button onclick="CoreLogic.enableEdit(${i})" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 shadow-sm transition-all" title="Edit Soal"><i class="fas fa-edit"></i></button>
-                                        <button onclick="CoreLogic.copyText(this, \`${item.tanya}\`)" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-green-600 hover:bg-green-50 hover:border-green-200 shadow-sm transition-all" title="Salin Soal"><i class="fas fa-copy"></i></button>
+                                        <button onclick="CoreLogic.copyText(this, \`${safeTanya}\`)" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-green-600 hover:bg-green-50 hover:border-green-200 shadow-sm transition-all" title="Salin Soal"><i class="fas fa-copy"></i></button>
                                     </div>
                                 </div>
                                 
@@ -1266,31 +1286,15 @@
 
             exportReal: async function(type) {
                 UIModule.showToast(`⏳ Mengirim data ke server untuk diekspor ke ${type}...`, "fas fa-sync fa-spin");
-                
-                const exportBtn = document.getElementById('export-actions');
-                const originalHtml = exportBtn.innerHTML;
-                exportBtn.innerHTML = `<span class="text-sm font-bold text-indigo-500 bg-indigo-50 px-4 py-2 rounded-xl"><i class="fas fa-circle-notch fa-spin mr-2"></i> Mengamankan Dokumen...</span>`;
-
                 try {
                     const res = await APIModule.call({ fitur: 'EXPORT', params: { type: type, data: StateModule.appState.soalData, topik: document.getElementById('topik').value || "Materi" } });
-                    if(res && res.status === 'LIMIT_REACHED') {
-                        exportBtn.innerHTML = originalHtml;
-                        return UIModule.showUpgradeModal();
-                    }
-                    if(res && res.status === 'error') throw new Error(res.msg);
+                    if(res.status === 'LIMIT_REACHED') return UIModule.showUpgradeModal();
+                    if(res.status === 'error') throw new Error(res.msg);
 
-                    APIModule.call({ fitur: 'PROFILE' }).then(p => { if(p && p.status === 'success') UIModule.updateProfileUI(p.data); });
-                    
-                    exportBtn.innerHTML = `
-                        <a href="${encodeURI(res.url)}" target="_blank" class="px-5 py-2.5 bg-green-500 text-white font-extrabold rounded-xl hover:bg-green-600 shadow-lg shadow-green-200 transition-all flex items-center gap-2 animate-subtle-bounce">
-                            <i class="fas fa-external-link-alt"></i> Buka File ${type}
-                        </a>
-                        <button onclick="document.getElementById('export-actions').innerHTML='${originalHtml.replace(/'/g, "\\'")}'" class="px-3 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 underline ml-2">Tutup</button>
-                    `;
-                    
-                    UIModule.showToast(`✅ File berhasil tersimpan di Drive! Klik tombol hijau "Buka File ${type}" di atas.`, "fas fa-check-circle");
+                    APIModule.call({ fitur: 'PROFILE' }).then(p => { if(p.status === 'success') UIModule.updateProfileUI(p.data); });
+                    UIModule.showToast(`✅ Berhasil! File tersimpan di Drive.`, "fas fa-cloud-arrow-up");
+                    window.open(res.url, '_blank'); 
                 } catch(err) {
-                    exportBtn.innerHTML = originalHtml;
                     UIModule.showToast("❌ Gagal ekspor: " + err.message, "fas fa-times-circle");
                 }
             },
@@ -1301,7 +1305,7 @@
 
                 try {
                     const res = await APIModule.call({fitur: 'RIWAYAT'});
-                    if(res && res.status === 'error') throw new Error(res.msg);
+                    if(res.status === 'error') throw new Error(res.msg);
                     UIModule.renderHistoryItems(list, res.data);
                 } catch(err) {
                     list.innerHTML = `<div class="text-center py-12 border-2 border-dashed border-slate-300 bg-slate-50 text-red-500 rounded-2xl"><i class="fas fa-times-circle text-4xl mb-4 block"></i><p class="text-base font-bold mb-2">Gagal memuat riwayat.</p><p class="text-xs text-slate-500">${err.message}</p></div>`;
@@ -1324,9 +1328,6 @@
 
         window.onload = () => {
             StateModule.init();
-            if (!AuthModule.checkExistingSession()) {
-                document.getElementById('login-overlay').classList.remove('opacity-0', 'pointer-events-none');
-            }
         };
     </script>
 </body>
