@@ -366,7 +366,7 @@
         const GOOGLE_CLIENT_ID = '655941024907-d4n5t4f06kemdka2gav9j2e3629mecoj.apps.googleusercontent.com';
         
         // 🔴 PASTE URL WEB APP GOOGLE SCRIPT BAPAK DI BAWAH INI (AKHIRAN /exec)
-        const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzXQNIuAuCh_YcLy-q1yFq-Wmhjkebb3BTMySpLcTTJPydLx8nXyvChFhYtRIvMExs0rQ/exec'; 
+        const GAS_API_URL = 'GANTI_DENGAN_URL_WEB_APP_GAS_ANDA_DISINI'; 
         
         let tokenClient;
         let userAccessToken = null;
@@ -404,17 +404,18 @@
         // 🌟 MODULE 2: AUTH & SECURITY 
         // ==========================================
         const AuthModule = {
+            inactivityTimer: null,
+            INACTIVITY_LIMIT: 15 * 60 * 1000, // 15 menit batas waktu tidak aktif
+
             init: function() {
                 if(typeof google !== 'undefined' && google.accounts) {
                     tokenClient = google.accounts.oauth2.initTokenClient({
                         client_id: GOOGLE_CLIENT_ID,
-                        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email',
+                        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email profile',
                         callback: (tokenResponse) => {
                             if (tokenResponse && tokenResponse.error) return UIModule.showToast("Login gagal.", "fas fa-times-circle");
                             if (tokenResponse && tokenResponse.access_token) {
                                 userAccessToken = tokenResponse.access_token;
-                                document.getElementById('login-overlay').classList.add('opacity-0', 'pointer-events-none');
-                                document.getElementById('btn-logout').classList.remove('hidden');
                                 
                                 fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                                     headers: { Authorization: `Bearer ${userAccessToken}` }
@@ -422,25 +423,82 @@
                                 .then(res => res.json())
                                 .then(data => {
                                     userEmailStr = data.email;
-                                    document.getElementById('user-email').innerText = Utils.escapeHTML(data.email);
+                                    // 🌟 FIX NAMA: Fallback super aman jika nama dari Google tidak tersedia
+                                    const userName = (data && (data.name || data.given_name || (data.email ? data.email.split('@')[0] : 'Guru Hebat'))) || 'Guru Hebat';
                                     
-                                    // Panggil Backend untuk Poin
-                                    APIModule.call({ fitur: 'PROFILE' }).then(pRes => {
-                                        if(pRes && pRes.status === 'success') {
-                                            UIModule.updateProfileUI(pRes.data);
-                                            UIModule.showToast(`Selamat datang, ${Utils.escapeHTML(data.name)}!`, "fas fa-check-circle");
-                                        }
-                                    });
+                                    // 🌟 SIMPAN SESI KE LOKAL (Agar tidak hilang saat direfresh)
+                                    localStorage.setItem('hanfaAuth', JSON.stringify({
+                                        token: userAccessToken,
+                                        email: userEmailStr,
+                                        name: userName
+                                    }));
+                                    
+                                    this.processLoginSuccess(userName, userEmailStr);
                                 });
                             }
                         },
                     });
                 }
             },
+            
+            processLoginSuccess: function(userName, email) {
+                document.getElementById('login-overlay').classList.add('opacity-0', 'pointer-events-none');
+                document.getElementById('btn-logout').classList.remove('hidden');
+                document.getElementById('user-email').innerText = Utils.escapeHTML(email);
+                
+                this.setupAutoLogout(); // Nyalakan Timer 15 Menit
+
+                // Panggil Backend untuk info Sisa Poin
+                APIModule.call({ fitur: 'PROFILE' }).then(pRes => {
+                    if(pRes && pRes.status === 'success') {
+                        UIModule.updateProfileUI(pRes.data);
+                        UIModule.showToast(`Selamat datang, ${Utils.escapeHTML(userName)}!`, "fas fa-check-circle");
+                    }
+                });
+            },
+
+            // 🌟 SISTEM AUTO LOGOUT JIKA 15 MENIT TIDAK ADA AKTIVITAS 🌟
+            setupAutoLogout: function() {
+                const resetTimer = () => {
+                    clearTimeout(this.inactivityTimer);
+                    localStorage.setItem('hanfaLastActivity', Date.now().toString());
+                    this.inactivityTimer = setTimeout(() => this.logout(true), this.INACTIVITY_LIMIT);
+                };
+
+                // Deteksi sensor aktivitas pengguna di layar
+                ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+                    document.addEventListener(evt, resetTimer, { passive: true });
+                });
+                resetTimer(); // Mulai timer
+            },
+
+            // 🌟 CEK SESI TERAKHIR SAAT REFRESH HALAMAN 🌟
+            checkExistingSession: function() {
+                const savedAuth = localStorage.getItem('hanfaAuth');
+                const lastActivity = localStorage.getItem('hanfaLastActivity');
+
+                if (savedAuth && lastActivity) {
+                    const now = Date.now();
+                    // Cek apakah jedanya masih di bawah 15 menit
+                    if (now - parseInt(lastActivity) < this.INACTIVITY_LIMIT) {
+                        const authData = JSON.parse(savedAuth);
+                        userAccessToken = authData.token;
+                        userEmailStr = authData.email;
+                        
+                        this.processLoginSuccess(authData.name, authData.email);
+                        return true; // Sesi dipulihkan
+                    } else {
+                        // Jika sudah ditinggal lebih dari 15 menit, bersihkan
+                        this.logout(true);
+                    }
+                }
+                return false; // Tidak ada sesi valid
+            },
+
             loginWithGoogle: function() {
                 if(typeof google === 'undefined' || !google.accounts) return UIModule.showToast("Sistem Auth sedang dimuat...", "fas fa-spinner fa-spin");
                 if(!tokenClient) this.init();
-                if(tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+                if(tokenClient) tokenClient.requestAccessToken();
             },
             bypassLoginPreview: function() {
                 userAccessToken = "DUMMY_TOKEN_PREVIEW";
@@ -449,8 +507,12 @@
                 UIModule.updateProfileUI({email: 'guest@hanfa.edu', tier: 'PREVIEW', sisaHari: null, sisa: 10, max: 10});
                 UIModule.showToast("Masuk dalam Mode Pratinjau", "fas fa-eye");
             },
-            logout: function() {
+            logout: function(autoLoggedOut = false) {
                 userAccessToken = null;
+                clearTimeout(this.inactivityTimer); // Matikan timer
+                localStorage.removeItem('hanfaAuth'); // Bersihkan brankas sesi
+                localStorage.removeItem('hanfaLastActivity');
+                
                 document.getElementById('user-email').innerText = "Menunggu Login...";
                 document.getElementById('user-tier').innerText = "Memuat Tier";
                 document.getElementById('point-text').innerText = "0 / 0";
@@ -464,7 +526,11 @@
                 document.getElementById('view-history').classList.add('hidden');
                 document.getElementById('view-empty').classList.remove('hidden');
                 
-                UIModule.showToast("Berhasil Logout & Cache Bersih.", "fas fa-check");
+                if(autoLoggedOut) {
+                    UIModule.showToast("Sesi berakhir karena Anda sudah tidak aktif selama 15 menit.", "fas fa-clock");
+                } else {
+                    UIModule.showToast("Berhasil Logout & Cache Bersih.", "fas fa-check");
+                }
             }
         };
 
@@ -474,7 +540,8 @@
         const APIModule = {
             call: async function(payloadData) {
                 if (!userAccessToken) {
-                    UIModule.showToast("Sesi Google terputus. Silakan login kembali.", "fas fa-lock");
+                    UIModule.showToast("Sesi terputus. Silakan login kembali.", "fas fa-lock");
+                    AuthModule.logout();
                     return null;
                 }
                 
@@ -734,7 +801,6 @@
                         let tagColor = (item.level && (item.level.includes('C5') || item.level.includes('C6'))) ? 'bg-red-50 text-red-600 border-red-200' : 
                                        (item.level && (item.level.includes('C3') || item.level.includes('C4'))) ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-green-50 text-green-600 border-green-200';
 
-                        // Format teks tanya agar baris baru dirender sebagai tag <br>
                         const safeTanya = Utils.escapeHTML(item.tanya).replace(/\n/g, '<br>');
                         const safeBahas = item.pembahasan ? Utils.escapeHTML(item.pembahasan) : '';
 
@@ -1038,6 +1104,12 @@
 
         window.onload = () => {
             StateModule.init();
+            
+            // 🌟 Cek apakah pengguna sudah login sebelumnya
+            if (!AuthModule.checkExistingSession()) {
+                // Jika belum, biarkan tampilan login overlay muncul
+                document.getElementById('login-overlay').classList.remove('opacity-0', 'pointer-events-none');
+            }
         };
     </script>
 </body>
