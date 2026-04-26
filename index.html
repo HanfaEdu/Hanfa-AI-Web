@@ -58,7 +58,6 @@
                 </ul>
             </div>
 
-            <!-- GANTI NOMOR WA DI SINI JIKA PERLU -->
             <button onclick="window.open('https://wa.me/6285640116543?text=Halo%20Admin%20Hanfa,%20saya%20ingin%20upgrade%20ke%20versi%20PRO', '_blank')" class="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all mb-3">
                 <i class="fab fa-whatsapp mr-2"></i> Hubungi Admin (Upgrade PRO)
             </button>
@@ -225,25 +224,25 @@
 
                             <div>
                                 <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Tujuan Pembelajaran</label>
-                                <textarea id="tp" class="form-input h-20" placeholder="Opsional: masukkan CP/TP agar materi lebih presisi..."></textarea>
+                                <textarea id="tp" class="form-input h-24" placeholder="Opsional: masukkan CP/TP (Indikator) agar lebih spesifik..."></textarea>
                             </div>
 
                             <!-- 🌟 VISUALISASI AI -->
                             <div id="visual-options">
                                 <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                    <i class="fas fa-palette text-indigo-500"></i> Opsi Visualisasi
+                                    <i class="fas fa-palette text-indigo-500"></i> Visualisasi Konten
                                 </label>
                                 <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50 cursor-pointer hover:bg-indigo-50 hover:border-indigo-200 transition-all select-none">
-                                    <input type="checkbox" id="include-visuals" class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300" checked>
+                                    <input type="checkbox" id="include-visuals" class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300">
                                     <div class="flex-1">
-                                        <span class="text-sm font-bold text-slate-700 block">Sertakan Ilustrasi AI</span>
-                                        <span class="text-[10px] font-medium text-slate-500">Menyisipkan gambar pendukung yang relevan.</span>
+                                        <span class="text-sm font-bold text-slate-700 block">Sertakan Ilustrasi / Gambar</span>
+                                        <span class="text-[10px] font-medium text-slate-500">AI akan merancang grafik/SVG yang relevan.</span>
                                     </div>
                                 </label>
                             </div>
 
                             <!-- 2A. Opsi Khusus Soal -->
-                            <div id="soal-options" class="space-y-6 border-t border-slate-100 pt-4">
+                            <div id="soal-options" class="space-y-6">
                                 <div>
                                     <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Tingkatan Kognitif</label>
                                     <select id="tingkat" class="form-input" onchange="UIModule.toggleSlider()">
@@ -496,6 +495,8 @@
         let tokenClient;
         let userAccessToken = null;
         let userEmailStr = "guest@hanfa.edu";
+        // 🌟 VARIABEL GLOBAL UNTUK MENAMPUNG NAMA PENGGUNA 🌟
+        let userFullNameStr = "User";
 
         const Utils = {
             escapeHTML: function(str) {
@@ -548,6 +549,7 @@
                                 .then(res => res.json())
                                 .then(data => {
                                     userEmailStr = data.email;
+                                    // Ekstraksi nama pengguna dari Google
                                     const userName = (data && (data.name || data.given_name || (data.email ? data.email.split('@')[0] : 'Guru Hebat'))) || 'Guru Hebat';
                                     
                                     localStorage.setItem('hanfaAuth', JSON.stringify({
@@ -565,6 +567,8 @@
             },
             
             processLoginSuccess: function(userName, email) {
+                userFullNameStr = userName; // Simpan nama ke memori global
+                
                 document.getElementById('login-overlay').classList.add('opacity-0', 'pointer-events-none');
                 document.getElementById('btn-logout').classList.remove('hidden');
                 
@@ -579,6 +583,7 @@
 
                 this.setupAutoLogout();
 
+                // Memanggil backend untuk memuat profil pengguna sekaligus MENYETORKAN NAMA
                 APIModule.call({ fitur: 'PROFILE' }).then(pRes => {
                     if(pRes && pRes.status === 'success') {
                         UIModule.updateProfileUI(pRes.data);
@@ -675,11 +680,16 @@
                     return null;
                 }
                 
+                // 🌟 INJEKSI NAMA OTOMATIS: Frontend selalu mengirimkan nama pengguna ke GAS
                 const finalPayload = {
                     accessToken: userAccessToken,
                     fitur: payloadData.fitur,
-                    params: payloadData.params
+                    params: payloadData.params || {}
                 };
+                
+                if (!finalPayload.params.name) {
+                    finalPayload.params.name = userFullNameStr;
+                }
 
                 if (userAccessToken === "DUMMY_TOKEN_PREVIEW") {
                     return this.simulateBackend(finalPayload);
@@ -982,7 +992,7 @@
                                             </div>
                                         </div>
                                         <button onclick="CoreLogic.enableEdit(${i})" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 shadow-sm transition-all" title="Edit Soal"><i class="fas fa-edit"></i></button>
-                                        <button onclick="CoreLogic.copyText(this, \`${safeTanya}\`)" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-green-600 hover:bg-green-50 hover:border-green-200 shadow-sm transition-all" title="Salin Soal"><i class="fas fa-copy"></i></button>
+                                        <button onclick="CoreLogic.copyText(this, \`${item.tanya}\`)" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-green-600 hover:bg-green-50 hover:border-green-200 shadow-sm transition-all" title="Salin Soal"><i class="fas fa-copy"></i></button>
                                     </div>
                                 </div>
                                 
@@ -1175,13 +1185,13 @@
 
                 try {
                     const res = await APIModule.call({ fitur: 'REGENERATE', params: { dataLama: StateModule.appState.soalData[index], tipeRegen: type } });
-                    if(res.status === 'LIMIT_REACHED') {
+                    if(res && res.status === 'LIMIT_REACHED') {
                         document.getElementById(`loading-overlay-${index}`)?.remove();
                         return UIModule.showUpgradeModal();
                     }
-                    if(res.status === 'error') throw new Error(res.msg);
+                    if(res && res.status === 'error') throw new Error(res.msg);
 
-                    APIModule.call({ fitur: 'PROFILE' }).then(p => { if(p.status === 'success') UIModule.updateProfileUI(p.data); });
+                    APIModule.call({ fitur: 'PROFILE' }).then(p => { if(p && p.status === 'success') UIModule.updateProfileUI(p.data); });
                     StateModule.appState.soalData[index] = res.data;
                     StateModule.save();
                     UIModule.renderSoalFromState();
