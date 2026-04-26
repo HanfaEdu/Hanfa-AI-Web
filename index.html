@@ -147,7 +147,7 @@
             <div onclick="UIModule.switchView('PROFILE')" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 relative group overflow-hidden cursor-pointer hover:border-indigo-400 hover:shadow-md transition-all" title="Buka Profil Pengguna">
                 <p class="text-[10px] font-extrabold text-slate-500 mb-2 uppercase tracking-wider">User Account</p>
                 <div class="flex items-center gap-3 relative z-10 mb-3">
-                    <div id="sidebar-avatar" class="text-3xl group-hover:scale-110 transition-transform">🧑‍🏫</div>
+                    <div id="sidebar-avatar" class="text-3xl group-hover:scale-110 transition-transform">👤</div>
                     <div class="flex-1 min-w-0">
                         <p id="user-email" class="text-xs font-bold text-slate-800 truncate">Menunggu Login...</p>
                         <p id="user-tier" class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mt-0.5">Memuat Tier</p>
@@ -366,7 +366,7 @@
                                 <!-- Bagian Avatar -->
                                 <div class="flex flex-col items-center gap-4">
                                     <div class="w-32 h-32 rounded-[2rem] border-4 border-indigo-50 shadow-lg overflow-hidden bg-white flex items-center justify-center text-6xl transition-transform hover:scale-105" id="profile-avatar-display">
-                                        🧑‍🏫
+                                        👤
                                     </div>
                                     <button onclick="UIModule.openAvatarSelector()" class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl hover:bg-indigo-100 transition-colors shadow-sm">
                                         <i class="fas fa-pencil-alt mr-1"></i> Ubah Avatar
@@ -402,14 +402,16 @@
                                 <button onclick="document.getElementById('avatar-selector').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
                             </div>
                             <div class="flex flex-wrap gap-4 justify-center">
-                                <button onclick="UIModule.setAvatar('🧑‍🏫')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🧑‍🏫</button>
+                                <button onclick="UIModule.setAvatar('👨‍🏫')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👨‍🏫</button>
+                                <button onclick="UIModule.setAvatar('👩‍🏫')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👩‍🏫</button>
                                 <button onclick="UIModule.setAvatar('👨‍🔬')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👨‍🔬</button>
-                                <button onclick="UIModule.setAvatar('👩‍💻')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👩‍💻</button>
-                                <button onclick="UIModule.setAvatar('🧙‍♂️')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🧙‍♂️</button>
-                                <button onclick="UIModule.setAvatar('🦸‍♀️')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🦸‍♀️</button>
+                                <button onclick="UIModule.setAvatar('👩‍🔬')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👩‍🔬</button>
+                                <button onclick="UIModule.setAvatar('🧕')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🧕</button>
+                                <button onclick="UIModule.setAvatar('👳‍♂️')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👳‍♂️</button>
+                                <button onclick="UIModule.setAvatar('🎓')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🎓</button>
                                 <button onclick="UIModule.setAvatar('🦉')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🦉</button>
-                                <button onclick="UIModule.setAvatar('🦊')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🦊</button>
                                 <button onclick="UIModule.setAvatar('🤖')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🤖</button>
+                                <button onclick="UIModule.setAvatar('👤')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👤</button>
                             </div>
                         </div>
 
@@ -599,7 +601,7 @@
                 const profileNameEl = document.getElementById('profile-name');
                 if(profileNameEl) profileNameEl.innerText = Utils.escapeHTML(userName);
                 
-                const savedAvatar = localStorage.getItem('hanfaAvatar') || '🧑‍🏫';
+                const savedAvatar = localStorage.getItem('hanfaAvatar') || '👤';
                 document.getElementById('sidebar-avatar').innerText = savedAvatar;
                 const profileAvatarEl = document.getElementById('profile-avatar-display');
                 if(profileAvatarEl) profileAvatarEl.innerText = savedAvatar;
