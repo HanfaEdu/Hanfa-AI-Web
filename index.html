@@ -132,19 +132,23 @@
                 <i class="fas fa-file-invoice w-6 text-center text-lg"></i><span>Pembuat LKPD</span>
             </div>
             
-            <div class="pt-8 pb-2 px-6 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Penyimpanan</div>
+            <div class="pt-8 pb-2 px-6 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Penyimpanan & Akun</div>
             
             <div onclick="UIModule.switchView('RIWAYAT')" id="menu-RIWAYAT" class="nav-item">
                 <i class="fas fa-cloud-arrow-up w-6 text-center text-lg"></i><span>Riwayat Drive</span>
+            </div>
+            <div onclick="UIModule.switchView('PROFILE')" id="menu-PROFILE" class="nav-item">
+                <i class="fas fa-user-circle w-6 text-center text-lg"></i><span>Profil Pengguna</span>
             </div>
         </nav>
 
         <!-- STATUS POIN & LOGOUT -->
         <div class="p-6 border-t border-slate-100">
-            <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 relative group overflow-hidden">
+            <!-- Kartu Profil Sidebar -->
+            <div onclick="UIModule.switchView('PROFILE')" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 relative group overflow-hidden cursor-pointer hover:border-indigo-400 hover:shadow-md transition-all" title="Buka Profil Pengguna">
                 <p class="text-[10px] font-extrabold text-slate-500 mb-2 uppercase tracking-wider">User Account</p>
                 <div class="flex items-center gap-3 relative z-10 mb-3">
-                    <i class="fas fa-user-circle text-slate-400 text-2xl group-hover:text-indigo-600 transition-colors"></i>
+                    <div id="sidebar-avatar" class="text-3xl group-hover:scale-110 transition-transform">🧑‍🏫</div>
                     <div class="flex-1 min-w-0">
                         <p id="user-email" class="text-xs font-bold text-slate-800 truncate">Menunggu Login...</p>
                         <p id="user-tier" class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mt-0.5">Memuat Tier</p>
@@ -161,7 +165,7 @@
                     </div>
                 </div>
 
-                <button onclick="AuthModule.logout()" id="btn-logout" class="w-full bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-500 text-[10px] font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-all hidden">
+                <button onclick="event.stopPropagation(); AuthModule.logout()" id="btn-logout" class="w-full bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-500 text-[10px] font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-all hidden z-20 relative">
                     <i class="fas fa-sign-out-alt"></i> Logout Akun
                 </button>
             </div>
@@ -174,7 +178,7 @@
             
             <div class="grid grid-cols-12 gap-6 lg:gap-8">
                 
-                <!-- LEFT CONFIGURATION -->
+                <!-- LEFT CONFIGURATION (Hidden in Profile & History View) -->
                 <div id="config-container" class="col-span-12 lg:col-span-5 space-y-6">
                     <div class="glass-card p-6 lg:p-8 border-indigo-100 shadow-xl shadow-indigo-50">
                         <div class="mb-8">
@@ -340,11 +344,132 @@
 
                     <!-- History View -->
                     <div id="view-history" class="hidden space-y-5">
-                        <div class="flex items-center justify-between px-2">
+                        <div class="flex items-center justify-between px-2 mb-6">
                             <h3 class="text-2xl font-extrabold text-slate-800">Riwayat File Drive</h3>
                             <span class="bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-2"><i class="fas fa-cloud text-sm"></i> NATIVE DRIVE SYNC</span>
                         </div>
                         <div id="history-list" class="grid gap-4"></div>
+                    </div>
+
+                    <!-- 🌟 VIEW BARU: PROFILE & UPGRADE PRO 🌟 -->
+                    <div id="view-profile" class="hidden space-y-6 max-w-3xl mx-auto">
+                        <div class="flex items-center justify-between px-2 mb-4">
+                            <h3 class="text-2xl font-extrabold text-slate-800">Profil Pengguna</h3>
+                        </div>
+
+                        <!-- Kartu Informasi Profil -->
+                        <div class="glass-card p-8 border-slate-200 shadow-sm relative overflow-hidden">
+                            <!-- Dekorasi Background Latar -->
+                            <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-indigo-500 rounded-full opacity-10 blur-3xl pointer-events-none"></div>
+
+                            <div class="flex flex-col md:flex-row gap-8 items-center md:items-start relative z-10">
+                                <!-- Bagian Avatar -->
+                                <div class="flex flex-col items-center gap-4">
+                                    <div class="w-32 h-32 rounded-[2rem] border-4 border-indigo-50 shadow-lg overflow-hidden bg-white flex items-center justify-center text-6xl transition-transform hover:scale-105" id="profile-avatar-display">
+                                        🧑‍🏫
+                                    </div>
+                                    <button onclick="UIModule.openAvatarSelector()" class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl hover:bg-indigo-100 transition-colors shadow-sm">
+                                        <i class="fas fa-pencil-alt mr-1"></i> Ubah Avatar
+                                    </button>
+                                </div>
+
+                                <!-- Bagian Detail Info -->
+                                <div class="flex-1 w-full text-center md:text-left space-y-4">
+                                    <div>
+                                        <h4 class="text-2xl font-extrabold text-slate-800" id="profile-name">Memuat Nama...</h4>
+                                        <p class="text-slate-500 font-medium" id="profile-email">email@example.com</p>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-4 mt-6">
+                                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                                            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Status Paket</p>
+                                            <p class="text-xl font-black text-indigo-600" id="profile-tier-detail">FREE</p>
+                                            <p class="text-xs font-bold text-slate-500 mt-2 hidden" id="profile-expired-detail">Masa Aktif: <span class="text-amber-500">0 Hari</span></p>
+                                        </div>
+                                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                                            <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Sisa Poin Harian</p>
+                                            <p class="text-xl font-black text-indigo-600" id="profile-points-detail">0 / 0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selector Avatar -->
+                        <div id="avatar-selector" class="hidden glass-card p-6 border-slate-200 mt-4 transition-all">
+                            <div class="flex justify-between items-center mb-4">
+                                <p class="text-sm font-bold text-slate-700">Pilih Karakter Favorit Anda:</p>
+                                <button onclick="document.getElementById('avatar-selector').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
+                            </div>
+                            <div class="flex flex-wrap gap-4 justify-center">
+                                <button onclick="UIModule.setAvatar('🧑‍🏫')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🧑‍🏫</button>
+                                <button onclick="UIModule.setAvatar('👨‍🔬')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👨‍🔬</button>
+                                <button onclick="UIModule.setAvatar('👩‍💻')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👩‍💻</button>
+                                <button onclick="UIModule.setAvatar('🧙‍♂️')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🧙‍♂️</button>
+                                <button onclick="UIModule.setAvatar('🦸‍♀️')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🦸‍♀️</button>
+                                <button onclick="UIModule.setAvatar('🦉')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🦉</button>
+                                <button onclick="UIModule.setAvatar('🦊')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🦊</button>
+                                <button onclick="UIModule.setAvatar('🤖')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🤖</button>
+                            </div>
+                        </div>
+
+                        <!-- 🌟 BANNER UPGRADE PRO 🌟 -->
+                        <div class="bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 rounded-[2rem] p-8 md:p-10 text-white relative overflow-hidden shadow-2xl mt-8 border border-indigo-700">
+                            <!-- Dekorasi Latar Banner -->
+                            <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none">
+                                <i class="fas fa-crown text-9xl text-yellow-400"></i>
+                            </div>
+
+                            <div class="relative z-10 flex flex-col md:flex-row gap-8 items-center">
+                                <div class="flex-1 text-center md:text-left">
+                                    <div class="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest text-indigo-100 mb-5 border border-white/20 backdrop-blur-sm">
+                                        <i class="fas fa-star text-yellow-400"></i> Penawaran Eksklusif PRO
+                                    </div>
+                                    <h3 class="text-3xl md:text-4xl font-black mb-4 leading-tight">Tingkatkan Kapasitas AI Anda!</h3>
+                                    <p class="text-indigo-200 font-medium mb-8 text-sm md:text-base leading-relaxed max-w-lg">Bebaskan kreativitas mengajar Anda. Dapatkan batas poin yang jauh lebih tinggi dan akses fitur kelas dunia untuk menyusun bahan ajar luar biasa setiap hari.</p>
+                                    
+                                    <ul class="space-y-4 mb-10 text-sm md:text-base font-semibold text-indigo-50">
+                                        <li class="flex items-center gap-4 justify-center md:justify-start">
+                                            <div class="w-8 h-8 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center"><i class="fas fa-check"></i></div>
+                                            Kuota 50 Poin AI Harian (5x Lipat!)
+                                        </li>
+                                        <li class="flex items-center gap-4 justify-center md:justify-start">
+                                            <div class="w-8 h-8 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center"><i class="fas fa-check"></i></div>
+                                            Akses Mode HOTS / Analisis Tingkat Tinggi
+                                        </li>
+                                        <li class="flex items-center gap-4 justify-center md:justify-start">
+                                            <div class="w-8 h-8 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center"><i class="fas fa-check"></i></div>
+                                            Prioritas Antrean Server (Super Cepat)
+                                        </li>
+                                    </ul>
+
+                                    <button onclick="window.open('https://wa.me/6285640116543?text=Halo%20Admin%20Hanfa,%20saya%20tertarik%20untuk%20upgrade%20ke%20versi%20PRO.%20Bisa%20minta%20info%20lebih%20lanjut?', '_blank')" class="bg-gradient-to-r from-yellow-400 to-amber-500 text-yellow-950 hover:from-yellow-300 hover:to-amber-400 font-black py-4 px-8 rounded-2xl shadow-[0_0_20px_rgba(250,204,21,0.4)] transition-transform hover:scale-105 active:scale-95 w-full md:w-auto flex items-center justify-center md:inline-flex gap-3 text-lg">
+                                        <i class="fab fa-whatsapp text-xl"></i> Hubungi Admin Sekarang
+                                    </button>
+                                </div>
+                                <div class="w-48 h-48 md:w-64 md:h-64 flex-shrink-0 hidden md:block">
+                                    <img src="logo.png" alt="Hanfa PRO" class="w-full h-full object-cover rounded-3xl shadow-2xl rotate-6 border-4 border-white/10" onerror="this.src='https://placehold.co/300x300?text=PRO';">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 🌟 BANTUAN & DUKUNGAN 🌟 -->
+                        <div class="glass-card p-6 md:p-8 border-slate-200 shadow-sm mt-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                            <div class="text-center md:text-left">
+                                <h4 class="text-lg font-extrabold text-slate-800 mb-1"><i class="fas fa-headset text-indigo-500 mr-2"></i> Bantuan & Dukungan</h4>
+                                <p class="text-sm text-slate-500 font-medium">Butuh bantuan teknis atau memiliki pertanyaan? Hubungi tim developer kami.</p>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                                <a href="mailto:hanfa.edutech@gmail.com" class="px-5 py-3 bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors shadow-sm">
+                                    <i class="fas fa-envelope text-indigo-400"></i> Email Admin
+                                </a>
+                                <!-- Ganti tautan IG di bawah ini dengan URL IG Hanfa Edu yang sebenarnya -->
+                                <a href="https://instagram.com/username_ig_disini" target="_blank" class="px-5 py-3 bg-white border border-slate-200 text-slate-600 hover:text-pink-600 hover:border-pink-200 font-bold rounded-xl text-sm flex items-center justify-center gap-2 transition-colors shadow-sm">
+                                    <i class="fab fa-instagram text-pink-500 text-lg"></i> Instagram Kami
+                                </a>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
@@ -365,7 +490,7 @@
         // ==========================================
         const GOOGLE_CLIENT_ID = '655941024907-d4n5t4f06kemdka2gav9j2e3629mecoj.apps.googleusercontent.com';
         
-        // 🔴 PASTE URL WEB APP GOOGLE SCRIPT BAPAK DI BAWAH INI (AKHIRAN /exec)
+        // 🌟 URL GAS SUDAH DIPASANG PERMANEN SESUAI PERMINTAAN 🌟
         const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzXQNIuAuCh_YcLy-q1yFq-Wmhjkebb3BTMySpLcTTJPydLx8nXyvChFhYtRIvMExs0rQ/exec'; 
         
         let tokenClient;
@@ -423,10 +548,8 @@
                                 .then(res => res.json())
                                 .then(data => {
                                     userEmailStr = data.email;
-                                    // 🌟 FIX NAMA: Fallback super aman jika nama dari Google tidak tersedia
                                     const userName = (data && (data.name || data.given_name || (data.email ? data.email.split('@')[0] : 'Guru Hebat'))) || 'Guru Hebat';
                                     
-                                    // 🌟 SIMPAN SESI KE LOKAL (Agar tidak hilang saat direfresh)
                                     localStorage.setItem('hanfaAuth', JSON.stringify({
                                         token: userAccessToken,
                                         email: userEmailStr,
@@ -444,11 +567,18 @@
             processLoginSuccess: function(userName, email) {
                 document.getElementById('login-overlay').classList.add('opacity-0', 'pointer-events-none');
                 document.getElementById('btn-logout').classList.remove('hidden');
-                document.getElementById('user-email').innerText = Utils.escapeHTML(email);
                 
-                this.setupAutoLogout(); // Nyalakan Timer 15 Menit
+                document.getElementById('user-email').innerText = Utils.escapeHTML(email);
+                document.getElementById('profile-email').innerText = Utils.escapeHTML(email);
+                document.getElementById('profile-name').innerText = Utils.escapeHTML(userName);
+                
+                // Set Avatar Default / Local
+                const savedAvatar = localStorage.getItem('hanfaAvatar') || '🧑‍🏫';
+                document.getElementById('sidebar-avatar').innerText = savedAvatar;
+                document.getElementById('profile-avatar-display').innerText = savedAvatar;
 
-                // Panggil Backend untuk info Sisa Poin
+                this.setupAutoLogout();
+
                 APIModule.call({ fitur: 'PROFILE' }).then(pRes => {
                     if(pRes && pRes.status === 'success') {
                         UIModule.updateProfileUI(pRes.data);
@@ -457,7 +587,6 @@
                 });
             },
 
-            // 🌟 SISTEM AUTO LOGOUT JIKA 15 MENIT TIDAK ADA AKTIVITAS 🌟
             setupAutoLogout: function() {
                 const resetTimer = () => {
                     clearTimeout(this.inactivityTimer);
@@ -465,34 +594,30 @@
                     this.inactivityTimer = setTimeout(() => this.logout(true), this.INACTIVITY_LIMIT);
                 };
 
-                // Deteksi sensor aktivitas pengguna di layar
                 ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
                     document.addEventListener(evt, resetTimer, { passive: true });
                 });
-                resetTimer(); // Mulai timer
+                resetTimer();
             },
 
-            // 🌟 CEK SESI TERAKHIR SAAT REFRESH HALAMAN 🌟
             checkExistingSession: function() {
                 const savedAuth = localStorage.getItem('hanfaAuth');
                 const lastActivity = localStorage.getItem('hanfaLastActivity');
 
                 if (savedAuth && lastActivity) {
                     const now = Date.now();
-                    // Cek apakah jedanya masih di bawah 15 menit
                     if (now - parseInt(lastActivity) < this.INACTIVITY_LIMIT) {
                         const authData = JSON.parse(savedAuth);
                         userAccessToken = authData.token;
                         userEmailStr = authData.email;
                         
                         this.processLoginSuccess(authData.name, authData.email);
-                        return true; // Sesi dipulihkan
+                        return true; 
                     } else {
-                        // Jika sudah ditinggal lebih dari 15 menit, bersihkan
                         this.logout(true);
                     }
                 }
-                return false; // Tidak ada sesi valid
+                return false; 
             },
 
             loginWithGoogle: function() {
@@ -505,12 +630,16 @@
                 document.getElementById('login-overlay').classList.add('opacity-0', 'pointer-events-none');
                 document.getElementById('btn-logout').classList.remove('hidden');
                 UIModule.updateProfileUI({email: 'guest@hanfa.edu', tier: 'PREVIEW', sisaHari: null, sisa: 10, max: 10});
+                
+                document.getElementById('profile-name').innerText = "Pengguna Pratinjau";
+                document.getElementById('profile-email').innerText = "guest@hanfa.edu";
+                
                 UIModule.showToast("Masuk dalam Mode Pratinjau", "fas fa-eye");
             },
             logout: function(autoLoggedOut = false) {
                 userAccessToken = null;
-                clearTimeout(this.inactivityTimer); // Matikan timer
-                localStorage.removeItem('hanfaAuth'); // Bersihkan brankas sesi
+                clearTimeout(this.inactivityTimer); 
+                localStorage.removeItem('hanfaAuth'); 
                 localStorage.removeItem('hanfaLastActivity');
                 
                 document.getElementById('user-email').innerText = "Menunggu Login...";
@@ -524,6 +653,7 @@
                 StateModule.clearData();
                 document.getElementById('view-result').classList.add('hidden');
                 document.getElementById('view-history').classList.add('hidden');
+                document.getElementById('view-profile').classList.add('hidden');
                 document.getElementById('view-empty').classList.remove('hidden');
                 
                 if(autoLoggedOut) {
@@ -617,29 +747,52 @@
         // 🌟 MODULE 4: UI & RENDER LOGIC
         // ==========================================
         const UIModule = {
+            setAvatar: function(emoji) {
+                localStorage.setItem('hanfaAvatar', emoji);
+                document.getElementById('sidebar-avatar').innerText = emoji;
+                document.getElementById('profile-avatar-display').innerText = emoji;
+                document.getElementById('avatar-selector').classList.add('hidden');
+                this.showToast("Avatar berhasil diperbarui!", "fas fa-check-circle");
+            },
+            openAvatarSelector: function() {
+                document.getElementById('avatar-selector').classList.remove('hidden');
+            },
+
             updateProfileUI: function(profile) {
-                document.getElementById('user-email').innerText = Utils.escapeHTML(profile.email);
-                
-                // Menampilkan Sisa Hari khusus untuk akun PRO
+                // Update Teks Sidebar
                 let tierText = "PAKET: " + Utils.escapeHTML(profile.tier);
                 if (profile.tier === 'PRO' && profile.sisaHari !== undefined && profile.sisaHari !== null) {
                     tierText += ` (${profile.sisaHari} Hari Lagi)`;
                 }
                 document.getElementById('user-tier').innerText = tierText;
                 
-                const pointText = document.getElementById('point-text');
-                const pointBar = document.getElementById('point-bar');
+                // Update Teks di Halaman Profil Cerdas
+                document.getElementById('profile-tier-detail').innerText = Utils.escapeHTML(profile.tier);
+                const expDetail = document.getElementById('profile-expired-detail');
+                if (profile.tier === 'PRO' && profile.sisaHari !== undefined && profile.sisaHari !== null) {
+                    expDetail.classList.remove('hidden');
+                    expDetail.innerHTML = `Masa Aktif: <span class="text-amber-500">${profile.sisaHari} Hari Lagi</span>`;
+                } else {
+                    expDetail.classList.add('hidden');
+                }
+
+                // Update Grafik Poin
+                const pointsStr = `${profile.sisa} / ${profile.max}`;
+                document.getElementById('point-text').innerText = pointsStr;
+                document.getElementById('profile-points-detail').innerText = pointsStr;
                 
-                pointText.innerText = `${profile.sisa} / ${profile.max}`;
+                const pointBar = document.getElementById('point-bar');
                 const percent = (profile.sisa / profile.max) * 100;
                 pointBar.style.width = percent + '%';
                 
                 if (percent <= 20) {
                     pointBar.classList.replace('bg-indigo-500', 'bg-red-500');
-                    pointText.classList.replace('text-indigo-600', 'text-red-600');
+                    document.getElementById('point-text').classList.replace('text-indigo-600', 'text-red-600');
+                    document.getElementById('profile-points-detail').classList.replace('text-indigo-600', 'text-red-600');
                 } else {
                     pointBar.classList.replace('bg-red-500', 'bg-indigo-500');
-                    pointText.classList.replace('text-red-600', 'text-indigo-600');
+                    document.getElementById('point-text').classList.replace('text-red-600', 'text-indigo-600');
+                    document.getElementById('profile-points-detail').classList.replace('text-red-600', 'text-indigo-600');
                 }
             },
             toggleSidebar: function() {
@@ -649,7 +802,8 @@
             switchView: function(mode) {
                 StateModule.currentMode = mode;
                 document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-                document.getElementById('menu-'+mode).classList.add('active');
+                const activeNav = document.getElementById('menu-'+mode);
+                if (activeNav) activeNav.classList.add('active');
 
                 const title = document.getElementById('view-title');
                 const desc = document.getElementById('view-desc');
@@ -661,11 +815,13 @@
                 const viewEmpty = document.getElementById('view-empty');
                 const viewResult = document.getElementById('view-result');
                 const viewHistory = document.getElementById('view-history');
+                const viewProfile = document.getElementById('view-profile');
 
                 configContainer.classList.remove('hidden');
                 viewEmpty.classList.remove('hidden');
                 viewResult.classList.add('hidden');
                 viewHistory.classList.add('hidden');
+                viewProfile.classList.add('hidden');
 
                 if(mode === 'SOAL') {
                     title.innerText = "Pembuat Soal";
@@ -697,6 +853,10 @@
                     viewEmpty.classList.add('hidden');
                     viewHistory.classList.remove('hidden');
                     CoreLogic.fetchHistory();
+                } else if(mode === 'PROFILE') {
+                    configContainer.classList.add('hidden');
+                    viewEmpty.classList.add('hidden');
+                    viewProfile.classList.remove('hidden');
                 }
                 if (window.innerWidth < 1024) this.toggleSidebar();
             },
@@ -822,7 +982,7 @@
                                             </div>
                                         </div>
                                         <button onclick="CoreLogic.enableEdit(${i})" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 shadow-sm transition-all" title="Edit Soal"><i class="fas fa-edit"></i></button>
-                                        <button onclick="CoreLogic.copyText(this, \`${item.tanya}\`)" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-green-600 hover:bg-green-50 hover:border-green-200 shadow-sm transition-all" title="Salin Soal"><i class="fas fa-copy"></i></button>
+                                        <button onclick="CoreLogic.copyText(this, \`${safeTanya}\`)" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-green-600 hover:bg-green-50 hover:border-green-200 shadow-sm transition-all" title="Salin Soal"><i class="fas fa-copy"></i></button>
                                     </div>
                                 </div>
                                 
@@ -1015,13 +1175,13 @@
 
                 try {
                     const res = await APIModule.call({ fitur: 'REGENERATE', params: { dataLama: StateModule.appState.soalData[index], tipeRegen: type } });
-                    if(res && res.status === 'LIMIT_REACHED') {
+                    if(res.status === 'LIMIT_REACHED') {
                         document.getElementById(`loading-overlay-${index}`)?.remove();
                         return UIModule.showUpgradeModal();
                     }
-                    if(res && res.status === 'error') throw new Error(res.msg);
+                    if(res.status === 'error') throw new Error(res.msg);
 
-                    APIModule.call({ fitur: 'PROFILE' }).then(p => { if(p && p.status === 'success') UIModule.updateProfileUI(p.data); });
+                    APIModule.call({ fitur: 'PROFILE' }).then(p => { if(p.status === 'success') UIModule.updateProfileUI(p.data); });
                     StateModule.appState.soalData[index] = res.data;
                     StateModule.save();
                     UIModule.renderSoalFromState();
