@@ -85,9 +85,7 @@
             <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" class="w-5 h-5">
             Lanjutkan dengan Google
         </button>
-        <button onclick="AuthModule.bypassLoginPreview()" class="w-full bg-slate-100 text-slate-500 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all text-xs flex items-center justify-center gap-2">
-            <i class="fas fa-eye"></i>Lewati & Lihat Tampilan (Pratinjau)
-        </button>
+
     </div>
 </div>
 
@@ -127,7 +125,7 @@
             <i class="fas fa-chalkboard w-6 text-center text-lg"></i><span>Pembuat Slide</span>
         </div>
         <div onclick="UIModule.switchView('LKPD')" id="menu-LKPD" class="nav-item">
-            <i class="fas fa-file-invoice w-6 text-center text-lg"></i><span>Pembuat LKPD</span>
+            <i class="fas fa-book-open w-6 text-center text-lg"></i><span>Modul / RPP</span>
         </div>
         <div class="pt-8 pb-2 px-6 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Penyimpanan & Akun</div>
         <div onclick="UIModule.switchView('RIWAYAT')" id="menu-RIWAYAT" class="nav-item">
@@ -924,8 +922,8 @@ const UIModule = {
             document.getElementById('jml-label').innerText = 'Jumlah Slide';
             document.getElementById('jumlah').max = '20';
         } else if (mode === 'LKPD') {
-            title.innerText = 'Pembuat LKPD';
-            desc.innerText  = 'Rancangan RPP & Lembar Kerja Siswa interaktif.';
+            title.innerText = 'Pembuat Modul / RPP';
+            desc.innerText  = 'Rancangan Modul Ajar, RPP & Lembar Kerja Siswa interaktif.';
             soalOptions.classList.add('hidden');
             if (lkpdOptions) lkpdOptions.classList.remove('hidden');
             jmlWrapper.classList.add('hidden');
@@ -1103,7 +1101,7 @@ const UIModule = {
         container.innerHTML = items.map(item => {
             let icon  = 'file-word', color = 'blue';
             if (item.tipe === 'SLIDE') { icon = 'chalkboard'; color = 'amber'; }
-            else if (item.tipe === 'LKPD') { icon = 'file-invoice'; color = 'purple'; }
+            else if (item.tipe === 'LKPD') { icon = 'book-open'; color = 'purple'; }
             const safeUrl = item.url ? encodeURI(item.url) : '#';
             return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="glass-card p-5 flex items-center justify-between hover:border-indigo-400 hover:shadow-md transition-all group border-slate-200">
                 <div class="flex items-center gap-5">
@@ -1206,7 +1204,7 @@ const CoreLogic = {
             UIModule.renderCardResult(res.url, 'Slide Presentasi Siap!', 'File presentasi Anda berhasil dirancang di Google Slides.', 'fas fa-chalkboard', 'amber');
         } else if (StateModule.currentMode === 'LKPD') {
             document.getElementById('result-type-label').innerText = 'LEMBAR KERJA SISWA';
-            UIModule.renderCardResult(res.url, 'Modul LKPD Siap!', 'Rancangan LKPD komprehensif telah tersimpan di Google Drive.', 'fas fa-file-invoice', 'purple');
+            UIModule.renderCardResult(res.url, 'Modul / RPP Siap!', 'Rancangan Modul Ajar & LKPD komprehensif telah tersimpan di Google Drive.', 'fas fa-book-open', 'purple');
         }
 
         UIModule.showToast('✅ ' + (res.msg || 'Berhasil!'), 'fas fa-check-circle');
