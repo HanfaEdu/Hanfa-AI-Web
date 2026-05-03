@@ -988,6 +988,53 @@ const UIModule = {
     showUpgradeModal: function() {
         document.getElementById('upgrade-modal').classList.remove('opacity-0', 'pointer-events-none');
     },
+
+    // Notifikasi sukses ekspor dengan link langsung + petunjuk riwayat
+    showExportSuccess: function(type, url, labelTipe) {
+        const ikonMap  = { DOC:'fa-file-word', PDF:'fa-file-pdf', FORM:'fa-list-check' };
+        const warnMap  = { DOC:'text-blue-600', PDF:'text-red-600', FORM:'text-purple-600' };
+        const ikon     = ikonMap[type]  || 'fa-file';
+        const warnaCls = warnMap[type]  || 'text-indigo-600';
+
+        const modalId = 'export-success-modal';
+        const existing = document.getElementById(modalId);
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id    = modalId;
+        modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[95] flex items-center justify-center';
+        modal.innerHTML = `
+            <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-[90%] text-center border-t-4 border-green-500 animate-fade-in">
+                <div class="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check-circle text-green-500 text-4xl"></i>
+                </div>
+                <h3 class="text-lg font-extrabold text-slate-800 mb-1">File Berhasil Dibuat!</h3>
+                <p class="text-sm text-slate-500 font-medium mb-5 leading-relaxed">
+                    File <strong>${labelTipe}</strong> sudah tersimpan di Google Drive Anda.
+                </p>
+                ${url && url !== '#' ? `
+                <a href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer"
+                   class="w-full mb-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 text-sm transition-all block">
+                    <i class="fas ${ikon} ${warnaCls} bg-white/20 p-1 rounded"></i>
+                    Buka File Sekarang
+                    <i class="fas fa-external-link-alt text-xs opacity-70"></i>
+                </a>` : ''}
+                <button onclick="UIModule.switchView('RIWAYAT'); document.getElementById('${modalId}').remove();"
+                        class="w-full mb-3 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold py-3 rounded-2xl text-sm flex items-center justify-center gap-2 transition-all">
+                    <i class="fas fa-cloud-arrow-up text-indigo-500"></i>
+                    Lihat di Menu Riwayat Drive
+                </button>
+                <button onclick="document.getElementById('${modalId}').remove();"
+                        class="w-full text-slate-400 hover:text-slate-600 text-xs font-bold py-2 rounded-xl transition-colors">
+                    Tutup
+                </button>
+            </div>`;
+        document.body.appendChild(modal);
+        // Klik di luar modal untuk tutup
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) modal.remove();
+        });
+    },
     showSkeletonLoader: function() {
         const area = document.getElementById('render-area');
         document.getElementById('export-actions').innerHTML = '';
@@ -1024,10 +1071,26 @@ const UIModule = {
                 let visualHtml = '';
                 if (item.gambar) {
                     const safeImgUrl = encodeURI(item.gambar);
-                    visualHtml = `<div class="mt-4 mb-4 rounded-xl overflow-hidden border border-slate-200 shadow-sm flex justify-center bg-slate-50 relative" id="img-wrap-${i}">
-                        <img src="${safeImgUrl}" alt="Ilustrasi Soal" class="w-full h-auto max-h-64 object-contain rounded-xl"
-                             onerror="document.getElementById('img-wrap-${i}').style.display='none'">
-                        <div class="absolute bottom-2 right-2 bg-slate-900/60 backdrop-blur-sm text-white text-[9px] px-2 py-1 rounded font-bold"><i class="fas fa-image"></i> Generated</div>
+                    // Loading shimmer dulu, ganti dengan gambar jika berhasil
+                    // Jika gagal, sembunyikan kontainer agar tidak ada broken icon
+                    visualHtml = `<div class="mt-4 mb-4 rounded-xl border border-slate-200 shadow-sm bg-slate-50 relative" id="img-wrap-${i}" style="min-height:80px">
+                        <div id="img-shimmer-${i}" class="shimmer w-full rounded-xl" style="height:180px"></div>
+                        <img src="${safeImgUrl}" alt="Ilustrasi Soal"
+                             class="w-full h-auto max-h-64 object-contain rounded-xl hidden"
+                             id="img-el-${i}"
+                             onload="
+                                 var sh=document.getElementById('img-shimmer-${i}');
+                                 var el=document.getElementById('img-el-${i}');
+                                 var wr=document.getElementById('img-wrap-${i}');
+                                 if(sh) sh.remove();
+                                 if(el) el.classList.remove('hidden');
+                                 if(wr) wr.style.minHeight='';
+                             "
+                             onerror="
+                                 var wr=document.getElementById('img-wrap-${i}');
+                                 if(wr) wr.style.display='none';
+                             ">
+                        <div class="absolute bottom-2 right-2 bg-slate-900/60 backdrop-blur-sm text-white text-[9px] px-2 py-1 rounded font-bold pointer-events-none" id="img-badge-${i}"><i class="fas fa-image"></i> Generated</div>
                     </div>`;
                 } else if (item.svg) {
                     // FIX: SVG disanitasi sebelum diinjek ke DOM
@@ -1260,18 +1323,67 @@ const CoreLogic = {
     },
 
     exportReal: async function(type) {
-        UIModule.showToast('⏳ Mengirim data ke server untuk diekspor ke ' + type + '...', 'fas fa-sync fa-spin');
+        const exportBtns = document.querySelectorAll('#export-actions button');
+        exportBtns.forEach(btn => { btn.disabled = true; btn.classList.add('opacity-50','cursor-not-allowed'); });
+
+        const labelMap  = { DOC:'Word (.docx)', PDF:'PDF', FORM:'Google Form' };
+        const labelTipe = labelMap[type] || type;
+        const overlayId = 'export-loading-overlay';
+        const oldOverlay = document.getElementById(overlayId);
+        if (oldOverlay) oldOverlay.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id    = overlayId;
+        overlay.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[90] flex items-center justify-center';
+        overlay.innerHTML = `
+            <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-[90%] text-center border-t-4 border-indigo-500">
+                <div class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-circle-notch fa-spin text-indigo-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-extrabold text-slate-800 mb-2">Menyiapkan File ${labelTipe}</h3>
+                <p id="export-progress-msg" class="text-sm text-slate-500 font-medium leading-relaxed">Menghubungi server...</p>
+                <div class="mt-4 bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div id="export-progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-700" style="width:10%"></div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-3 font-medium">Proses ini mungkin memakan 30-90 detik<br>karena gambar sedang disisipkan ke dokumen.</p>
+            </div>`;
+        document.body.appendChild(overlay);
+
+        const setProgress = (pct, msg) => {
+            const bar = document.getElementById('export-progress-bar');
+            const txt = document.getElementById('export-progress-msg');
+            if (bar) bar.style.width = pct + '%';
+            if (txt) txt.innerText = msg;
+        };
+
+        const t1 = setTimeout(() => setProgress(30, 'AI sedang menyusun dokumen...'), 4000);
+        const t2 = setTimeout(() => setProgress(50, 'Mengunduh dan menyisipkan gambar...'), 12000);
+        const t3 = setTimeout(() => setProgress(70, 'Menyimpan ke Google Drive Anda...'), 30000);
+        const t4 = setTimeout(() => setProgress(88, 'Hampir selesai, mohon ditunggu...'), 55000);
+        const clearAll = () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+
+        const reEnableBtn = () => {
+            exportBtns.forEach(btn => { btn.disabled = false; btn.classList.remove('opacity-50','cursor-not-allowed'); });
+        };
+
         try {
             const res = await APIModule.call({
                 fitur:  'EXPORT',
                 params: { type: type, data: StateModule.appState.soalData, topik: (document.getElementById('topik').value || 'Materi') }
             });
+            clearAll();
+            setProgress(100, 'Selesai!');
+            setTimeout(() => { const o = document.getElementById(overlayId); if (o) o.remove(); }, 500);
+            reEnableBtn();
+
             if (res.status === 'LIMIT_REACHED') return UIModule.showUpgradeModal();
             if (res.status === 'error') throw new Error(res.msg);
             APIModule.call({ fitur: 'PROFILE' }).then(p => { if (p && p.status === 'success') UIModule.updateProfileUI(p.data); });
-            UIModule.showToast('✅ Berhasil! File tersimpan di Drive.', 'fas fa-cloud-arrow-up');
-            if (res.url && res.url !== '#') window.open(res.url, '_blank');
+            UIModule.showExportSuccess(type, res.url, labelTipe);
         } catch(err) {
+            clearAll();
+            const o = document.getElementById(overlayId); if (o) o.remove();
+            reEnableBtn();
             UIModule.showToast('❌ Gagal ekspor: ' + err.message, 'fas fa-times-circle');
         }
     },
