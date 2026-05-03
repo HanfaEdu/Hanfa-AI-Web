@@ -1137,13 +1137,15 @@ const UIModule = {
                              })()">
                         <div class="absolute bottom-2 right-2 bg-slate-900/60 backdrop-blur-sm text-white text-[9px] px-2 py-1 rounded font-bold pointer-events-none" id="img-badge-${i}"><i class="fas fa-image"></i> Generated</div>
                     </div>`;
-                    // Timeout 15 detik: jika shimmer masih ada (gambar belum load/error), sembunyikan
-                    setTimeout((function(idx){ return function(){
-                        var sh=document.getElementById('img-shimmer-'+idx);
-                        var wr=document.getElementById('img-wrap-'+idx);
-                        // Shimmer masih ada berarti gambar tidak kunjung load
-                        if(sh && wr) wr.style.display='none';
-                    }; })(${i}), 15000);
+                    // Timeout 15 detik: jika shimmer masih ada (gambar belum load), sembunyikan
+                    // Gunakan closure dengan variabel i yang sudah tersedia di forEach
+                    (function(idx){
+                        setTimeout(function(){
+                            var sh = document.getElementById('img-shimmer-' + idx);
+                            var wr = document.getElementById('img-wrap-' + idx);
+                            if (sh && wr) wr.style.display = 'none';
+                        }, 15000);
+                    })(i);
                 } else if (item.svg) {
                     // FIX: SVG disanitasi sebelum diinjek ke DOM
                     const safeSvg = Utils.sanitizeSVG(item.svg);
