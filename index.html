@@ -468,6 +468,10 @@ let userAccessToken  = null;   // ← HANYA di memori, tidak di-persist
 let userEmailStr     = 'guest@hanfa.ai';
 let userFullNameStr  = 'Guru Hebat';
 
+// Tracking proses generate yang sedang berjalan
+let _generateInProgress = false;   // true jika ada proses generate aktif
+let _generateModeActive = null;    // mode saat generate dimulai (SOAL/SLIDE/LKPD)
+
 // ==========================================
 // UTILS
 // ==========================================
@@ -900,6 +904,16 @@ const UIModule = {
         viewHistory.classList.add('hidden');
         if (viewProfile) viewProfile.classList.add('hidden');
 
+        // FIX: Reset label pratinjau agar tidak menampilkan label dari mode sebelumnya
+        const resultLabel = document.getElementById('result-type-label');
+        if (resultLabel) {
+            const labelMap = { SOAL:'BUTIR SOAL', SLIDE:'SLIDE PRESENTASI', LKPD:'MODUL / RPP' };
+            resultLabel.innerText = labelMap[mode] || '';
+        }
+
+        // Tampilkan status bar jika ada proses generate yang sedang berjalan
+        UIModule.updateGenerateStatusBar();
+
         if (mode === 'SOAL') {
             title.innerText = 'Pembuat Soal';
             desc.innerText  = 'AI akan merancang evaluasi berkualitas tinggi.';
@@ -987,6 +1001,37 @@ const UIModule = {
     },
     showUpgradeModal: function() {
         document.getElementById('upgrade-modal').classList.remove('opacity-0', 'pointer-events-none');
+    },
+
+    // Status bar generate persisten — tetap terlihat meski pindah menu
+    updateGenerateStatusBar: function() {
+        const barId  = 'generate-status-bar';
+        const existing = document.getElementById(barId);
+        if (!_generateInProgress) {
+            if (existing) existing.remove();
+            return;
+        }
+        if (existing) return; // sudah ada, tidak perlu buat ulang
+        const modeLabel = { SOAL:'Soal', SLIDE:'Slide', LKPD:'Modul/RPP' };
+        const bar = document.createElement('div');
+        bar.id    = barId;
+        bar.className = 'fixed bottom-0 left-0 right-0 lg:left-72 bg-indigo-600 text-white z-[80] flex items-center gap-3 px-6 py-3 shadow-lg';
+        bar.innerHTML = `
+            <i class="fas fa-circle-notch fa-spin text-white text-sm"></i>
+            <span class="text-sm font-bold flex-1">
+                AI sedang merancang <span class="text-yellow-300">${modeLabel[_generateModeActive] || 'Konten'}</span>...
+                Anda bisa tetap menjelajah menu lain.
+            </span>
+            <span class="text-[10px] font-bold bg-white/20 px-3 py-1 rounded-full">PROSES AKTIF</span>`;
+        document.body.appendChild(bar);
+    },
+
+    hideGenerateStatusBar: function() {
+        const bar = document.getElementById('generate-status-bar');
+        if (bar) {
+            bar.classList.add('translate-y-full');
+            setTimeout(() => bar.remove(), 300);
+        }
     },
 
     // Notifikasi sukses ekspor dengan link langsung + petunjuk riwayat
@@ -1078,20 +1123,27 @@ const UIModule = {
                         <img src="${safeImgUrl}" alt="Ilustrasi Soal"
                              class="w-full h-auto max-h-64 object-contain rounded-xl hidden"
                              id="img-el-${i}"
-                             onload="
+                             onload="(function(){
                                  var sh=document.getElementById('img-shimmer-${i}');
                                  var el=document.getElementById('img-el-${i}');
                                  var wr=document.getElementById('img-wrap-${i}');
                                  if(sh) sh.remove();
                                  if(el) el.classList.remove('hidden');
                                  if(wr) wr.style.minHeight='';
-                             "
-                             onerror="
+                             })()"
+                             onerror="(function(){
                                  var wr=document.getElementById('img-wrap-${i}');
                                  if(wr) wr.style.display='none';
-                             ">
+                             })()">
                         <div class="absolute bottom-2 right-2 bg-slate-900/60 backdrop-blur-sm text-white text-[9px] px-2 py-1 rounded font-bold pointer-events-none" id="img-badge-${i}"><i class="fas fa-image"></i> Generated</div>
                     </div>`;
+                    // Timeout 15 detik: jika shimmer masih ada (gambar belum load/error), sembunyikan
+                    setTimeout((function(idx){ return function(){
+                        var sh=document.getElementById('img-shimmer-'+idx);
+                        var wr=document.getElementById('img-wrap-'+idx);
+                        // Shimmer masih ada berarti gambar tidak kunjung load
+                        if(sh && wr) wr.style.display='none';
+                    }; })(${i}), 15000);
                 } else if (item.svg) {
                     // FIX: SVG disanitasi sebelum diinjek ke DOM
                     const safeSvg = Utils.sanitizeSVG(item.svg);
@@ -1202,6 +1254,11 @@ const CoreLogic = {
         btnText.innerHTML    = '<i class="fas fa-sync fa-spin text-lg"></i><span> MEMPROSES...</span>';
         UIModule.showToast('⏳ AI sedang merancang konten untuk Anda...', 'fas fa-wand-magic-sparkles fa-spin');
 
+        // Set flag proses aktif
+        _generateInProgress = true;
+        _generateModeActive = StateModule.currentMode;
+        UIModule.updateGenerateStatusBar();
+
         document.getElementById('view-empty').classList.add('hidden');
         document.getElementById('view-result').classList.remove('hidden');
 
@@ -1228,16 +1285,25 @@ const CoreLogic = {
         };
 
         try {
+            const modeSnapshot = StateModule.currentMode;
             const res = await APIModule.call(params);
-            this.handleSuccess(res);
+            this.handleSuccess(res, modeSnapshot);
         } catch(e) {
             this.handleError(e.message);
         }
     },
 
-    handleSuccess: function(res) {
+    handleSuccess: function(res, completedMode) {
         document.getElementById('btn-generate').disabled  = false;
         document.getElementById('btn-text').innerText     = 'BUAT SEKARANG';
+
+        // Clear flag proses generate
+        _generateInProgress = false;
+        _generateModeActive = null;
+        UIModule.hideGenerateStatusBar();
+
+        // Gunakan mode saat generate dimulai (bukan mode saat ini, kalau pengguna pindah menu)
+        const modeHasil = completedMode || StateModule.currentMode;
 
         if (!res) {
             document.getElementById('render-area').innerHTML = '';
@@ -1258,16 +1324,28 @@ const CoreLogic = {
             if (p && p.status === 'success') UIModule.updateProfileUI(p.data);
         });
 
-        if (StateModule.currentMode === 'SOAL') {
+        // Jika pengguna sudah pindah menu, tampilkan toast saja + switch balik ke menu hasil
+        if (modeHasil !== StateModule.currentMode) {
+            UIModule.showToast('✅ ' + (res.msg || 'Selesai!') + ' — Klik untuk lihat hasil.', 'fas fa-check-circle');
+            // Simpan data dulu, pengguna bisa klik menu untuk lihat
+            if (modeHasil === 'SOAL' && res.data) {
+                StateModule.appState.soalData = res.data;
+                StateModule.save();
+            }
+            return;
+        }
+
+        // Pengguna masih di menu yang sama — render hasil normal
+        if (modeHasil === 'SOAL') {
             StateModule.appState.soalData = res.data;
             StateModule.save();
             document.getElementById('result-type-label').innerText = 'BUTIR SOAL';
             UIModule.renderSoalFromState();
-        } else if (StateModule.currentMode === 'SLIDE') {
+        } else if (modeHasil === 'SLIDE') {
             document.getElementById('result-type-label').innerText = 'SLIDE PRESENTASI';
             UIModule.renderCardResult(res.url, 'Slide Presentasi Siap!', 'File presentasi Anda berhasil dirancang di Google Slides.', 'fas fa-chalkboard', 'amber');
-        } else if (StateModule.currentMode === 'LKPD') {
-            document.getElementById('result-type-label').innerText = 'LEMBAR KERJA SISWA';
+        } else if (modeHasil === 'LKPD') {
+            document.getElementById('result-type-label').innerText = 'MODUL / RPP';
             UIModule.renderCardResult(res.url, 'Modul / RPP Siap!', 'Rancangan Modul Ajar & LKPD komprehensif telah tersimpan di Google Drive.', 'fas fa-book-open', 'purple');
         }
 
@@ -1278,6 +1356,9 @@ const CoreLogic = {
     handleError: function(err) {
         document.getElementById('btn-generate').disabled = false;
         document.getElementById('btn-text').innerText    = 'BUAT SEKARANG';
+        _generateInProgress = false;
+        _generateModeActive = null;
+        UIModule.hideGenerateStatusBar();
         document.getElementById('render-area').innerHTML = '<div class="text-center py-10 text-red-500 font-bold"><i class="fas fa-exclamation-triangle text-3xl mb-2 block"></i>Gagal Memuat.</div>';
         UIModule.showToast('❌ ' + err, 'fas fa-exclamation-triangle');
     },
