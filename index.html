@@ -1,1517 +1,999 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hanfa | AI Teaching Ecosystem</title>
-    <link rel="icon" href="logo.png" type="image/png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Identity Services — onload memanggil AuthModule.init() jika sudah tersedia -->
-    <script src="https://accounts.google.com/gsi/client" async defer onload="if(window.AuthModule) AuthModule.init()"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+import React, { useState, useEffect, useRef } from 'react';
+import { Camera, CheckCircle, Clock, AlertTriangle, ChevronRight, ChevronDown, LogOut, Info, Users, MapPin, ArrowLeft, Bus, Map, Sparkles, Edit3, PlusCircle, Trash2, Save } from 'lucide-react';
 
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; }
-        .glass-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: 1px solid #cbd5e1; border-radius: 24px; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 14px 18px; margin: 6px 16px; border-radius: 12px; color: #475569; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-        .nav-item:hover { background: #f1f5f9; color: #4f46e5; }
-        .nav-item.active { background: #4f46e5; color: white; box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
-        .form-input { width: 100%; padding: 12px 16px; border: 1.5px solid #cbd5e1; border-radius: 14px; font-size: 14px; font-weight: 600; color: #1e293b; background-color: #ffffff; transition: all 0.2s; outline: none; }
-        .form-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
-        .form-input::placeholder { font-weight: 500; color: #94a3b8; }
-        .slider-container { background: #f8fafc; padding: 20px; border-radius: 18px; border: 1.5px solid #e2e8f0; }
-        input[type=range] { -webkit-appearance: none; width: 100%; height: 8px; background: #cbd5e1; border-radius: 10px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #4f46e5; cursor: pointer; border: 4px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-        .shimmer { background: linear-gradient(90deg, #f1f5f9 25%, #f8fafc 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .sidebar-transition { transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
-        .edit-input { width: 100%; border: 2px dashed #4f46e5; border-radius: 8px; padding: 8px; background: #eef2ff; color: #1e293b; font-weight: bold; outline: none; }
-        @keyframes subtle-bounce { 0%,100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8,0,1,1); } 50% { transform: none; animation-timing-function: cubic-bezier(0,0,0.2,1); } }
-        .animate-subtle-bounce { animation: subtle-bounce 1.5s infinite; }
-    </style>
-</head>
-<body class="antialiased overflow-x-hidden relative">
+// === URL DEPLOYMENT GAS ANDA ===
+const GAS_URL = "URL_GAS_ANDA_DISINI";
+const GOOGLE_CLIENT_ID = "110053587589-1sp6he4mep0t5oe38g9aqnd04hevp0to.apps.googleusercontent.com";
 
-<!-- MODAL LIMIT KUOTA -->
-<div id="upgrade-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-    <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-md w-[90%] text-center transform transition-transform scale-95 border-t-8 border-indigo-500 overflow-y-auto max-h-[90vh]">
-        <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
-            <i class="fas fa-crown text-3xl"></i>
+// ==========================================
+// ERROR BOUNDARY
+// ==========================================
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error('App Error caught by boundary:', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-red-50 text-red-600 p-6 text-center">
+          <AlertTriangle size={64} className="mb-4" />
+          <h2 className="text-2xl font-bold mb-2">Terjadi Kesalahan Sistem</h2>
+          <p className="mb-4 text-sm">{this.state.error?.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700"
+          >
+            Muat Ulang Aplikasi
+          </button>
         </div>
-        <h2 class="text-xl font-extrabold text-slate-800">Limit Harian Tercapai!</h2>
-        <p class="text-slate-500 mt-2 mb-5 text-sm font-medium leading-relaxed">Anda telah menggunakan semua poin AI Hanfa untuk hari ini. Poin akan otomatis di-reset besok pagi.</p>
-        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-5 text-left">
-            <p class="text-xs font-bold text-slate-600 mb-2"><i class="fas fa-bolt text-amber-500 mr-2"></i>Keuntungan Hanfa PRO:</p>
-            <ul class="text-xs text-slate-500 space-y-2">
-                <li><i class="fas fa-check text-green-500 mr-2"></i>Kuota 50 Poin AI Per Hari (5x Lipat)</li>
-                <li><i class="fas fa-check text-green-500 mr-2"></i>Akses Analisis HOTS Tingkat Tinggi</li>
-                <li><i class="fas fa-check text-green-500 mr-2"></i>Prioritas Antrean Server (Super Cepat)</li>
-            </ul>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mb-5">
-            <div class="border border-slate-200 rounded-xl p-3 text-center bg-white">
-                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">6 BULAN</div>
-                <div class="text-xs text-slate-400 line-through decoration-red-500 decoration-2">Rp150.000</div>
-                <div class="text-lg font-black text-indigo-600">Rp59rb</div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function App() {
+  // STATE NAVIGASI & USER
+  const [step, setStep] = useState('login');
+  const [user, setUser] = useState(null);
+  const [guruData, setGuruData] = useState(null);
+
+  // STATE TRANSAKSI PRESENSI
+  const [activeObjek, setActiveObjek] = useState(null);
+  const [tipeAksi, setTipeAksi] = useState('IN');
+  const [kondisiKelompok, setKondisiKelompok] = useState('Lengkap');
+  const [alasanTerlambat, setAlasanTerlambat] = useState('');
+  const [caraPresensi, setCaraPresensi] = useState('Scan QR');
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [statusMessage, setStatusMessage] = useState({ text: '', type: '' });
+
+  // STATE EDIT SISWA
+  const [siswaForm, setSiswaForm] = useState([]);
+
+  // STATE UI LAINNYA
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSiswaInfo, setShowSiswaInfo] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // STATE KAMERA QR & SELFIE
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [scanError, setScanError] = useState(null);
+  const qrScannerRef = useRef(null);
+  const isQrScanningRef = useRef(false);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // REF AURORA CANVAS — harus di level atas komponen (Rules of Hooks)
+  const auroraCanvasRef = useRef(null);
+
+  // ==========================================
+  // EFEK — SEMUA useEffect DI LEVEL ATAS (BENAR)
+  // ==========================================
+
+  // 1. Timer + Judul Tab
+  useEffect(() => {
+    document.title = "SIGE - Grand Edutour";
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 2. Alarm SOP (15 & 10 menit sebelum jam keluar)
+  useEffect(() => {
+    if (step !== 'dashboard' || !guruData?.jadwal) return;
+    guruData.jadwal.forEach(objek => {
+      if (!objek.jam_keluar) return;
+      const [jamS, menitS] = objek.jam_keluar.replace('.', ':').split(':');
+      const batas = new Date(currentTime);
+      batas.setHours(parseInt(jamS), parseInt(menitS), 0, 0);
+      const selisihMenit = (batas.getTime() - currentTime.getTime()) / (1000 * 60);
+      if (Math.abs(selisihMenit - 15) < 0.05) {
+        speakPeringatan(`Perhatian. Waktu eksplorasi di ${objek.nama_objek} sisa 15 menit. Harap segera bersiap mengumpulkan anak-anak dan berpindah objek.`);
+      }
+      if (Math.abs(selisihMenit - 10) < 0.05) {
+        speakPeringatan(`Waktu di ${objek.nama_objek} sisa 10 menit. Harap kelompok segera menuju area bus atau titik kumpul berikutnya.`);
+      }
+    });
+  }, [currentTime, guruData, step]);
+
+  // 3. Muat Script Html5Qrcode sekali saja
+  useEffect(() => {
+    if (window.Html5Qrcode) {
+      setScriptLoaded(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = "https://unpkg.com/html5-qrcode";
+    script.async = true;
+    script.onload = () => setScriptLoaded(true);
+    document.body.appendChild(script);
+  }, []);
+
+  // 4. ✅ FIX UTAMA — Kontrol kamera QR scanner di level atas (bukan di dalam render)
+  useEffect(() => {
+    // Jika bukan step scan, hentikan scanner jika sedang jalan
+    if (step !== 'scan' || caraPresensi !== 'Scan QR') {
+      if (qrScannerRef.current && isQrScanningRef.current) {
+        isQrScanningRef.current = false;
+        qrScannerRef.current
+          .stop()
+          .then(() => qrScannerRef.current?.clear())
+          .catch(console.error);
+      }
+      return;
+    }
+
+    if (!scriptLoaded || scanError) return;
+
+    const startScanner = async () => {
+      if (isQrScanningRef.current) return;
+      try {
+        const html5QrCode = new window.Html5Qrcode("qr-reader");
+        qrScannerRef.current = html5QrCode;
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+          (decodedText) => {
+            if (isQrScanningRef.current) {
+              isQrScanningRef.current = false;
+              qrScannerRef.current?.stop()
+                .then(() => qrScannerRef.current?.clear())
+                .catch(console.error);
+              // QR berhasil dibaca → pindah ke konfirmasi
+              setStep('confirm');
+            }
+          },
+          () => { /* Abaikan error frame */ }
+        );
+        isQrScanningRef.current = true;
+      } catch (err) {
+        console.error(err);
+        setScanError("Kamera tidak bisa diakses. Gunakan mode Manual di bawah.");
+      }
+    };
+
+    const timer = setTimeout(startScanner, 300);
+    return () => {
+      clearTimeout(timer);
+      if (qrScannerRef.current && isQrScanningRef.current) {
+        isQrScanningRef.current = false;
+        qrScannerRef.current
+          .stop()
+          .then(() => qrScannerRef.current?.clear())
+          .catch(console.error);
+      }
+    };
+  }, [step, caraPresensi, scriptLoaded, scanError]);
+
+  // 5. Kontrol kamera depan (selfie)
+  useEffect(() => {
+    const stopFrontCamera = () => {
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+        videoRef.current.srcObject = null;
+      }
+    };
+
+    if (step !== 'scan' || caraPresensi !== 'Manual Selfi') {
+      stopFrontCamera();
+      return;
+    }
+
+    let cancelled = false;
+    const startCamera = async () => {
+      try {
+        stopFrontCamera();
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        if (!cancelled && videoRef.current) {
+          videoRef.current.srcObject = stream;
+        } else {
+          stream.getTracks().forEach(t => t.stop());
+        }
+      } catch (err) {
+        console.error("Gagal buka kamera depan:", err);
+      }
+    };
+
+    startCamera();
+    return () => {
+      cancelled = true;
+      stopFrontCamera();
+    };
+  }, [step, caraPresensi]);
+
+  // 6. Init Google Login
+  useEffect(() => {
+    if (step !== 'login') return;
+
+    const initGoogleLogin = () => {
+      if (!window.google) return;
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-btn"),
+        { theme: "outline", size: "large", width: 280, shape: "pill" }
+      );
+    };
+
+    if (typeof window.google === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = initGoogleLogin;
+      document.body.appendChild(script);
+    } else {
+      initGoogleLogin();
+    }
+  }, [step]);
+
+  // 7. Aurora canvas animation (login screen)
+  useEffect(() => {
+    if (step !== 'login') return;
+    const canvas = auroraCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const PASTEL_COLORS = [
+      'rgba(255, 182, 182', // merah pastel
+      'rgba(182, 210, 255', // biru pastel
+      'rgba(255, 240, 160', // kuning pastel
+      'rgba(182, 240, 200', // hijau pastel
+      'rgba(220, 182, 255', // ungu pastel aksen
+    ];
+
+    const POINT_COUNT = 55;
+    const points = Array.from({ length: POINT_COUNT }, (_, i) => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      r: Math.random() * 2.2 + 0.8,
+      color: PASTEL_COLORS[i % PASTEL_COLORS.length],
+      pulse: Math.random() * Math.PI * 2,
+      pulseSpeed: 0.012 + Math.random() * 0.018,
+    }));
+
+    const MAX_DIST = 130;
+    let animId;
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      points.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.pulse += p.pulseSpeed;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      });
+      for (let i = 0; i < points.length; i++) {
+        for (let j = i + 1; j < points.length; j++) {
+          const dx = points[i].x - points[j].x;
+          const dy = points[i].y - points[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MAX_DIST) {
+            const alpha = (1 - dist / MAX_DIST) * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(points[i].x, points[i].y);
+            ctx.lineTo(points[j].x, points[j].y);
+            ctx.strokeStyle = `${points[i].color}, ${alpha})`;
+            ctx.lineWidth = 0.7;
+            ctx.stroke();
+          }
+        }
+      }
+      points.forEach(p => {
+        const pulse = 0.6 + 0.4 * Math.sin(p.pulse);
+        const alpha = 0.5 + 0.4 * Math.sin(p.pulse);
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 6 * pulse);
+        grad.addColorStop(0, `${p.color}, ${alpha * 0.7})`);
+        grad.addColorStop(1, `${p.color}, 0)`);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 6 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = `${p.color}, ${alpha})`;
+        ctx.fill();
+      });
+      animId = requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, [step]);
+
+  // ==========================================
+  // HELPERS
+  // ==========================================
+  const speakPeringatan = (teks) => {
+    if ('speechSynthesis' in window) {
+      const u = new SpeechSynthesisUtterance(teks);
+      u.lang = 'id-ID';
+      u.rate = 0.9;
+      window.speechSynthesis.speak(u);
+    }
+  };
+
+  const cekKetepatanWaktuUI = (jamJadwalStr) => {
+    if (!jamJadwalStr) return "Tepat Waktu";
+    const parts = jamJadwalStr.replace('.', ':').split(':');
+    const batas = new Date(currentTime);
+    batas.setHours(parseInt(parts[0]), parseInt(parts[1]), 59, 999);
+    return currentTime <= batas ? "Tepat Waktu" : "Terlambat";
+  };
+
+  const buildJadwalWithPerjalanan = () => {
+    if (!guruData?.jadwal) return [];
+    const fullJadwal = [];
+    const j = guruData.jadwal;
+    for (let i = 0; i < j.length; i++) {
+      fullJadwal.push({ ...j[i], type: 'objek' });
+      if (i < j.length - 1) {
+        const keluarSekarang = j[i].jam_keluar;
+        const masukBerikutnya = j[i + 1].jam_masuk;
+        if (keluarSekarang && masukBerikutnya && keluarSekarang !== masukBerikutnya) {
+          fullJadwal.push({
+            type: 'perjalanan',
+            nama_objek: `Perjalanan menuju ${j[i + 1].nama_objek}`,
+            jam_mulai: keluarSekarang,
+            jam_selesai: masukBerikutnya
+          });
+        }
+      }
+    }
+    return fullJadwal;
+  };
+
+  const openEditSiswa = () => {
+    setSiswaForm(guruData?.anggota_siswa ? JSON.parse(JSON.stringify(guruData.anggota_siswa)) : []);
+    setStep('edit_siswa');
+  };
+
+  const handleSiswaChange = (index, field, value) => {
+    const newForm = [...siswaForm];
+    newForm[index][field] = value;
+    setSiswaForm(newForm);
+  };
+
+  const addSiswa = () => {
+    setSiswaForm([...siswaForm, { nama: '', panggilan: '', jk: 'Putra', daerah: '' }]);
+  };
+
+  const removeSiswa = (index) => {
+    const newForm = [...siswaForm];
+    newForm.splice(index, 1);
+    setSiswaForm(newForm);
+  };
+
+  const simpanSelfie = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (video && canvas) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+      setCapturedImage(dataUrl);
+      if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+    }
+  };
+
+  // ==========================================
+  // FUNGSI KOMUNIKASI API (GAS)
+  // ==========================================
+  const fetchDashboardData = async (email) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${GAS_URL}?action=dashboard_guru&email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (data.status === 'success') {
+        setGuruData(data);
+        setStep('dashboard');
+      } else {
+        alert(data.message);
+      }
+    } catch (err) {
+      alert("Gagal memuat jadwal. Pastikan koneksi internet stabil.");
+    }
+    setIsLoading(false);
+  };
+
+  const handleGoogleResponse = async (response) => {
+    try {
+      setIsLoading(true);
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
+      setUser({ email: payload.email, nama_akun: payload.name });
+      const res = await fetch(`${GAS_URL}?action=login&email=${encodeURIComponent(payload.email)}&nama_akun=${encodeURIComponent(payload.name)}`);
+      const data = await res.json();
+      if (data.status === 'success') {
+        fetchDashboardData(payload.email);
+      } else {
+        alert(data.message);
+        setIsLoading(false);
+      }
+    } catch (err) {
+      alert("Gagal login Google.");
+      setIsLoading(false);
+    }
+  };
+
+  const submitPresensi = async () => {
+    if (!activeObjek) return;
+    setIsLoading(true);
+    const payload = {
+      action: "presensi",
+      nama_pendamping: guruData.nama_pendamping,
+      nama_objek: activeObjek.nama_objek,
+      jam_jadwal: tipeAksi === 'IN' ? activeObjek.jam_masuk : activeObjek.jam_keluar,
+      tipe_aksi: tipeAksi,
+      kondisi_kelompok: kondisiKelompok,
+      cara_presensi: caraPresensi,
+      alasan: alasanTerlambat || "-",
+      foto: capturedImage
+    };
+    try {
+      const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.status === 'success' || data.kode === 'DUPLIKAT') {
+        setStatusMessage({ text: data.message, type: data.kode === 'DUPLIKAT' ? 'warning' : 'success' });
+        setStep('result');
+        fetchDashboardData(user.email);
+      } else {
+        alert(data.message);
+      }
+    } catch (err) {
+      alert("Gagal mengirim data. Cek koneksi internet.");
+    }
+    setIsLoading(false);
+  };
+
+  const submitEditSiswa = async () => {
+    setIsLoading(true);
+    const payload = {
+      action: "update_siswa",
+      nama_pendamping: guruData.nama_pendamping,
+      grup: guruData.grup,
+      no_kelompok: guruData.no_kelompok,
+      siswa: siswaForm
+    };
+    try {
+      const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.status === 'success') {
+        alert("Data siswa berhasil diperbarui!");
+        fetchDashboardData(user.email);
+        setStep('dashboard');
+      } else {
+        alert(data.message);
+      }
+    } catch (err) {
+      alert("Gagal memperbarui data siswa.");
+    }
+    setIsLoading(false);
+  };
+
+  // ==========================================
+  // RENDER VIEWS
+  // ==========================================
+  const renderLoginView = () => {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen px-6 relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #f0f7ff 0%, #fafffe 45%, #fffdf0 100%)' }}>
+
+        {/* === AURORA CANVAS === */}
+        <canvas
+          ref={auroraCanvasRef}
+          className="absolute inset-0 w-full h-full"
+          style={{ zIndex: 0 }}
+        />
+
+        {/* === CSS Animasi === */}
+        <style>{`
+          @keyframes breathe {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.0), 0 0 16px 4px rgba(66,133,244,0.10); }
+            40%       { box-shadow: 0 0 0 8px rgba(66, 133, 244, 0.08), 0 0 32px 10px rgba(66,133,244,0.18); }
+            60%       { box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.12), 0 0 24px 8px rgba(66,133,244,0.22); }
+          }
+          @keyframes breatheRing {
+            0%, 100% { opacity: 0; transform: scale(1); }
+            40%       { opacity: 0.55; transform: scale(1.08); }
+            60%       { opacity: 0.35; transform: scale(1.04); }
+          }
+          .google-btn-wrap {
+            position: relative;
+            display: inline-flex;
+            border-radius: 9999px;
+            animation: breathe 3.2s ease-in-out infinite;
+          }
+          .google-btn-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 9999px;
+            border: 2px solid rgba(66,133,244,0.45);
+            pointer-events: none;
+            animation: breatheRing 3.2s ease-in-out infinite;
+          }
+          .google-btn-ring-2 {
+            position: absolute;
+            inset: -9px;
+            border-radius: 9999px;
+            border: 1.5px solid rgba(66,133,244,0.22);
+            pointer-events: none;
+            animation: breatheRing 3.2s ease-in-out infinite;
+            animation-delay: 0.3s;
+          }
+        `}</style>
+
+        {/* === KARTU LOGIN === */}
+        <div className="w-full max-w-sm bg-white/75 backdrop-blur-xl p-8 rounded-3xl shadow-xl flex flex-col items-center border border-white/60" style={{ zIndex: 1 }}>
+          <div className="w-28 h-28 mb-4 relative flex items-center justify-center">
+            <div className="absolute inset-0 bg-blue-100 rounded-full blur-xl opacity-60"></div>
+            <img
+              src="/logo.png"
+              alt="Logo SIGE"
+              className="w-full h-full object-contain relative z-10 drop-shadow-md"
+              onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+            />
+            <div className="hidden w-full h-full bg-blue-100 rounded-full items-center justify-center relative z-10">
+              <Map className="text-blue-600" size={48} />
             </div>
-            <div class="border-2 border-yellow-400 rounded-xl p-3 text-center bg-gradient-to-b from-yellow-50 to-amber-50 relative overflow-hidden">
-                <div class="absolute top-0 right-0 bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded-bl-lg">BEST</div>
-                <div class="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">1 TAHUN</div>
-                <div class="text-xs text-slate-400 line-through decoration-red-500 decoration-2">Rp250.000</div>
-                <div class="text-lg font-black text-amber-600">Rp99rb</div>
-            </div>
-        </div>
-        <button onclick="window.open('https://wa.me/6285640116543?text=Halo%20Admin%20Hanfa,%20saya%20ingin%20upgrade%20ke%20versi%20PRO','_blank')" class="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all mb-3 text-sm">
-            <i class="fab fa-whatsapp mr-2"></i>Ambil Diskon via WhatsApp
-        </button>
-        <button onclick="document.getElementById('upgrade-modal').classList.add('opacity-0','pointer-events-none')" class="w-full bg-white text-slate-500 border border-slate-200 font-bold py-3 rounded-xl hover:bg-slate-50 transition-all text-xs">
-            Kembali & Menunggu Reset
-        </button>
-    </div>
-</div>
+          </div>
 
-<!-- LOGIN OVERLAY -->
-<div id="login-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center transition-opacity duration-500">
-    <div class="bg-white p-10 rounded-3xl shadow-2xl max-w-md w-[90%] text-center">
-        <div class="w-24 h-24 mx-auto mb-6 rounded-3xl shadow-inner overflow-hidden border-2 border-slate-100 flex items-center justify-center bg-white">
-            <img src="logo.png" alt="Hanfa Edu Logo" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100x100?text=Logo';">
-        </div>
-        <h2 class="text-2xl font-extrabold text-slate-800">Hanfa AI</h2>
-        <p class="text-slate-500 mt-2 mb-6 text-sm font-medium leading-relaxed">Asisten Pembelajaran Berbasis AI. Silakan login untuk menghubungkan ruang kerja dengan Google Drive Anda.</p>
-        <!-- Pesan error login -->
-        <div id="login-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-bold"></div>
-        <button onclick="AuthModule.loginWithGoogle()" id="btn-google-login" class="w-full bg-white border-2 border-slate-200 text-slate-700 font-bold py-4 rounded-xl shadow-sm hover:bg-slate-50 hover:border-indigo-300 transition-all flex items-center justify-center gap-3 mb-3">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" class="w-5 h-5">
-            Lanjutkan dengan Google
-        </button>
+          <h1 className="text-2xl font-black text-gray-800 text-center mb-1 tracking-tight">Grand Edutour</h1>
+          <p className="text-blue-600 font-bold text-xs tracking-widest uppercase mb-6">Sistem Informasi Terpadu</p>
+          <p className="text-gray-500 text-center mb-8 text-sm px-4">Masuk dengan Akun Google untuk melihat jadwal kelompok Anda.</p>
 
-    </div>
-</div>
+          {/* Tombol Google dengan animasi berpendar */}
+          <div className="w-full flex justify-center mb-4">
+            <div className="google-btn-wrap">
+              <div className="google-btn-ring" />
+              <div className="google-btn-ring-2" />
+              <div id="google-btn" className="min-h-[40px]" />
+            </div>
+          </div>
 
-<!-- MOBILE OVERLAY & HEADER -->
-<div id="overlay" onclick="UIModule.toggleSidebar()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden lg:hidden"></div>
-<header class="lg:hidden flex items-center gap-4 bg-white border-b border-slate-200 p-4 sticky top-0 z-30 shadow-sm">
-    <button onclick="UIModule.toggleSidebar()" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center hover:bg-slate-200 transition-colors">
-        <i class="fas fa-bars text-lg"></i>
-    </button>
-    <div class="flex items-center gap-3 text-indigo-600 font-extrabold text-xl">
-        <div class="w-9 h-9 rounded-lg shadow-md overflow-hidden border border-slate-200 bg-white">
-            <img src="logo.png" alt="Logo" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/40x40?text=H';">
+          {isLoading && (
+            <div className="mt-4 flex items-center text-blue-600 font-medium text-sm">
+              <Sparkles className="animate-spin mr-2" size={16} /> Menghubungkan ke Server...
+            </div>
+          )}
         </div>
-        Hanfa<span class="text-slate-800">AI</span>
-    </div>
-</header>
+      </div>
+    );
+  };
 
-<!-- SIDEBAR -->
-<aside id="sidebar" class="sidebar-transition fixed top-0 left-0 h-full w-72 bg-white border-r border-slate-200 z-50 transform -translate-x-full lg:translate-x-0 flex flex-col shadow-2xl lg:shadow-none">
-    <div class="p-8 hidden lg:block">
-        <div class="flex items-center gap-4">
-            <div class="w-11 h-11 rounded-xl shadow-lg shadow-indigo-100 overflow-hidden border-2 border-slate-100 bg-white flex-shrink-0">
-                <img src="logo.png" alt="Logo" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/50x50?text=H';">
+  const renderDashboardView = () => {
+    const listJadwal = buildJadwalWithPerjalanan();
+    return (
+      <div className="max-w-md mx-auto bg-gray-50 min-h-screen relative pb-20 shadow-md">
+        {/* Header */}
+        <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-blue-800 text-white p-6 pb-8 rounded-b-[2.5rem] shadow-lg sticky top-0 z-10">
+          <div className="flex justify-between items-center mb-5">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-white/20 rounded-full p-1 mr-3 backdrop-blur-sm hidden sm:block">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow" onError={(e) => { e.target.style.display = 'none'; }} />
+              </div>
+              <div>
+                <h2 className="text-xs font-semibold text-blue-200 uppercase tracking-wider mb-0.5">Pendamping</h2>
+                <p className="font-bold text-lg drop-shadow-sm leading-tight">{guruData?.nama_pendamping}</p>
+              </div>
             </div>
-            <span class="text-2xl font-extrabold tracking-tight">Hanfa<span class="text-indigo-600">AI</span></span>
-        </div>
-    </div>
-    <div class="p-6 lg:hidden flex justify-between items-center border-b border-slate-100 mb-2">
-        <span class="font-bold text-slate-800 uppercase tracking-widest text-xs">Menu Utama</span>
-        <button onclick="UIModule.toggleSidebar()" class="text-slate-400 hover:text-red-500 bg-slate-50 w-8 h-8 rounded-lg flex items-center justify-center"><i class="fas fa-times text-lg"></i></button>
-    </div>
-    <nav class="flex-1 px-2 space-y-1 overflow-y-auto">
-        <div onclick="UIModule.switchView('SOAL')" id="menu-SOAL" class="nav-item active">
-            <i class="fas fa-edit w-6 text-center text-lg"></i><span>Pembuat Soal</span>
-        </div>
-        <div onclick="UIModule.switchView('SLIDE')" id="menu-SLIDE" class="nav-item">
-            <i class="fas fa-chalkboard w-6 text-center text-lg"></i><span>Pembuat Slide</span>
-        </div>
-        <div onclick="UIModule.switchView('LKPD')" id="menu-LKPD" class="nav-item">
-            <i class="fas fa-book-open w-6 text-center text-lg"></i><span>Modul / RPP</span>
-        </div>
-        <div class="pt-8 pb-2 px-6 text-[11px] font-extrabold text-slate-400 uppercase tracking-widest">Penyimpanan & Akun</div>
-        <div onclick="UIModule.switchView('RIWAYAT')" id="menu-RIWAYAT" class="nav-item">
-            <i class="fas fa-cloud-arrow-up w-6 text-center text-lg"></i><span>Riwayat Drive</span>
-        </div>
-        <div onclick="UIModule.switchView('PROFILE')" id="menu-PROFILE" class="nav-item">
-            <i class="fas fa-user-circle w-6 text-center text-lg"></i><span>Profil Pengguna</span>
-        </div>
-    </nav>
-    <!-- STATUS POIN & LOGOUT -->
-    <div class="p-6 border-t border-slate-100">
-        <div onclick="UIModule.switchView('PROFILE')" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 relative group overflow-hidden cursor-pointer hover:border-indigo-400 hover:shadow-md transition-all" title="Buka Profil Pengguna">
-            <p class="text-[10px] font-extrabold text-slate-500 mb-2 uppercase tracking-wider">User Account</p>
-            <div class="flex items-center gap-3 relative z-10 mb-3">
-                <div id="sidebar-avatar" class="text-3xl group-hover:scale-110 transition-transform">👤</div>
-                <div class="flex-1 min-w-0">
-                    <p id="user-email" class="text-xs font-bold text-slate-800 truncate">Menunggu Login...</p>
-                    <p id="user-tier" class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mt-0.5">Memuat Tier</p>
-                </div>
-            </div>
-            <div class="relative z-10 mb-3">
-                <div class="flex justify-between text-[10px] font-bold mb-1">
-                    <span class="text-slate-500">Sisa Poin Harian</span>
-                    <span id="point-text" class="text-indigo-600">0 / 0</span>
-                </div>
-                <div class="w-full bg-indigo-100/50 rounded-full h-2">
-                    <div id="point-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-1000" style="width:0%"></div>
-                </div>
-            </div>
-            <button onclick="event.stopPropagation(); AuthModule.logout()" id="btn-logout" class="w-full bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-slate-500 text-[10px] font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-all hidden z-20 relative">
-                <i class="fas fa-sign-out-alt"></i>Logout Akun
+            <button onClick={() => setStep('login')} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-sm transition-all border border-white/10 shadow-sm">
+              <LogOut size={18} className="text-white" />
             </button>
-        </div>
-    </div>
-</aside>
+          </div>
 
-<!-- MAIN CONTENT -->
-<main class="lg:ml-72 min-h-screen p-4 lg:p-10">
-    <div class="max-w-6xl mx-auto">
-        <div class="grid grid-cols-12 gap-6 lg:gap-8">
-
-            <!-- LEFT CONFIGURATION -->
-            <div id="config-container" class="col-span-12 lg:col-span-5 space-y-6">
-                <div class="glass-card p-6 lg:p-8 border-indigo-100 shadow-xl shadow-indigo-50">
-                    <div class="mb-8">
-                        <h2 id="view-title" class="text-3xl font-extrabold text-slate-900 tracking-tight">Pembuat Soal</h2>
-                        <p id="view-desc" class="text-slate-600 font-medium text-sm mt-2">AI akan merancang evaluasi berkualitas tinggi.</p>
-                    </div>
-                    <div class="space-y-6">
-                        <!-- Topik & Kelas -->
-                        <div>
-                            <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Topik / Materi Pokok</label>
-                            <input type="text" id="topik" class="form-input" placeholder="Misal: Pemanasan Global">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Kelas</label>
-                                <select id="kelas" class="form-input">
-                                    <optgroup label="Sekolah Dasar (SD)">
-                                        <option value="SD Kelas 1">SD Kelas 1</option>
-                                        <option value="SD Kelas 2">SD Kelas 2</option>
-                                        <option value="SD Kelas 3">SD Kelas 3</option>
-                                        <option value="SD Kelas 4">SD Kelas 4</option>
-                                        <option value="SD Kelas 5">SD Kelas 5</option>
-                                        <option value="SD Kelas 6">SD Kelas 6</option>
-                                    </optgroup>
-                                    <optgroup label="Sekolah Menengah Pertama (SMP)">
-                                        <option value="SMP Kelas 7">SMP Kelas 7</option>
-                                        <option value="SMP Kelas 8">SMP Kelas 8</option>
-                                        <option value="SMP Kelas 9">SMP Kelas 9</option>
-                                    </optgroup>
-                                    <optgroup label="SMA/MA/SMK">
-                                        <option value="SMA Kelas 10" selected>SMA/MA/SMK Kelas 10</option>
-                                        <option value="SMA Kelas 11">SMA/MA/SMK Kelas 11</option>
-                                        <option value="SMA Kelas 12">SMA/MA/SMK Kelas 12</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                            <div id="jml-wrapper">
-                                <label id="jml-label" class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Jumlah Item</label>
-                                <input type="number" id="jumlah" value="5" min="1" max="50" class="form-input text-center" oninput="UIModule.validateJumlah(this)">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Tujuan Pembelajaran</label>
-                            <textarea id="tp" class="form-input h-24" placeholder="Opsional: masukkan CP/TP (Indikator) agar lebih spesifik..."></textarea>
-                        </div>
-                        <!-- Visualisasi AI -->
-                        <div id="visual-options">
-                            <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                <i class="fas fa-palette text-indigo-500"></i>Visualisasi Konten
-                            </label>
-                            <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl bg-slate-50 cursor-pointer hover:bg-indigo-50 hover:border-indigo-200 transition-all select-none">
-                                <!-- FIX: default TIDAK dicentang sesuai permintaan -->
-                                <input type="checkbox" id="include-visuals" class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300">
-                                <div class="flex-1">
-                                    <span class="text-sm font-bold text-slate-700 block">Sertakan Ilustrasi / Gambar</span>
-                                    <span class="text-[10px] font-medium text-slate-500">Gambar hanya jika jadi acuan pengerjaan soal (diagram, grafik, peta).</span>
-                                </div>
-                            </label>
-                        </div>
-                        <!-- Opsi Khusus Soal -->
-                        <div id="soal-options" class="space-y-6 border-t border-slate-100 pt-4">
-                            <div>
-                                <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Tingkatan Kognitif</label>
-                                <select id="tingkat" class="form-input" onchange="UIModule.toggleSlider()">
-                                    <option value="LOTS">LOTS C1-C2 (Mengingat & Memahami)</option>
-                                    <option value="MOTS">MOTS C3-C4 (Menerapkan & Menganalisis)</option>
-                                    <option value="HOTS" selected>HOTS C5-C6 (Evaluasi & Mencipta)</option>
-                                    <option value="MIX">Campuran (Kustom Rasio)</option>
-                                </select>
-                            </div>
-                            <div id="slider-box" class="hidden slider-container">
-                                <div class="flex justify-between text-[11px] font-extrabold mb-3">
-                                    <span id="label-left" class="text-indigo-600">C1-C3: 50%</span>
-                                    <span id="label-right" class="text-purple-600">C4-C6: 50%</span>
-                                </div>
-                                <input type="range" id="ratio" min="0" max="100" value="50" oninput="UIModule.updateRatio(this.value)">
-                            </div>
-                            <div>
-                                <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Tipe Soal</label>
-                                <select id="tipe-soal" class="form-input">
-                                    <option value="PG3">Pilihan Ganda (3 Opsi)</option>
-                                    <option value="PG4" selected>Pilihan Ganda (4 Opsi)</option>
-                                    <option value="PG5">Pilihan Ganda (5 Opsi)</option>
-                                    <option value="ISIAN">Isian Singkat</option>
-                                    <option value="URAIAN">Uraian / Essay</option>
-                                    <option value="BS">Benar-Salah</option>
-                                    <option value="JODOH">Menjodohkan</option>
-                                </select>
-                            </div>
-                        </div>
-                        <!-- Opsi Khusus LKPD -->
-                        <div id="lkpd-options" class="hidden space-y-6 border-t border-slate-100 pt-4">
-                            <div>
-                                <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Gaya Struktur Kurikulum</label>
-                                <select id="kurikulum" class="form-input">
-                                    <option value="KUMER" selected>Kurikulum Merdeka</option>
-                                    <option value="K13">Kurikulum 2013 (K13)</option>
-                                    <option value="KTSP">Kurikulum Tingkat Satuan Pendidikan (KTSP)</option>
-                                </select>
-                            </div>
-                        </div>
-                        <!-- Referensi -->
-                        <div class="border-t border-slate-100 pt-4">
-                            <label class="text-xs font-extrabold text-slate-600 uppercase tracking-widest mb-2 block">Referensi Materi</label>
-                            <div class="grid grid-cols-2 gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-200">
-                                <button onclick="UIModule.setRef('AI')" id="ref-AI" class="ref-btn active bg-indigo-600 shadow-md text-white border border-indigo-600 text-[10px] font-extrabold py-2.5 rounded-xl transition-all">Sistem AI</button>
-                                <button onclick="UIModule.setRef('TEXT')" id="ref-TEXT" class="ref-btn bg-white border border-slate-200 text-slate-500 text-[10px] font-extrabold py-2.5 rounded-xl hover:bg-slate-100 transition-all">Tempel Teks</button>
-                            </div>
-                            <div id="ref-input" class="mt-3">
-                                <div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex gap-3 items-center">
-                                    <i class="fas fa-database text-indigo-400 text-lg"></i>
-                                    <p class="text-xs text-slate-600 font-medium leading-relaxed">Menggunakan basis data internal AI untuk menyusun konten.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <button onclick="CoreLogic.runProcess()" id="btn-generate" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm py-4 rounded-2xl shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-3 active:scale-[0.98] mt-4">
-                            <i class="fas fa-sparkles text-lg"></i>
-                            <span id="btn-text">BUAT SEKARANG</span>
-                        </button>
-                    </div>
+          <div
+            className="bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 mt-2 cursor-pointer hover:bg-white/20 transition-all shadow-inner"
+            onClick={() => setShowSiswaInfo(!showSiswaInfo)}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-[10px] font-bold bg-blue-500/50 text-white px-2 py-0.5 rounded-full uppercase tracking-wider border border-blue-400/50">Grup {guruData?.grup}</span>
+                  <span className="text-[10px] font-bold bg-blue-500/50 text-white px-2 py-0.5 rounded-full uppercase tracking-wider border border-blue-400/50">Klp {guruData?.no_kelompok}</span>
                 </div>
+                <div className="flex items-center">
+                  <Users size={16} className="mr-2 text-blue-100" />
+                  <span className="font-semibold text-sm">{guruData?.anggota_siswa?.length || 0} Siswa Terdaftar</span>
+                </div>
+              </div>
+              <div className="bg-white/10 p-1.5 rounded-full">
+                {showSiswaInfo ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+              </div>
             </div>
 
-            <!-- RIGHT PREVIEW -->
-            <div id="preview-container" class="col-span-12 lg:col-span-7">
-                <!-- Welcome -->
-                <div id="view-empty" class="h-full flex flex-col items-center justify-center p-12 text-center glass-card border-dashed border-2 min-h-[500px]">
-                    <div class="w-24 h-24 bg-indigo-50 text-indigo-500 rounded-[2rem] flex items-center justify-center mb-6 rotate-3 shadow-inner">
-                        <i class="fas fa-wand-magic-sparkles text-4xl"></i>
+            {showSiswaInfo && (
+              <div className="mt-4 pt-3 border-t border-white/20">
+                <div className="max-h-60 overflow-y-auto mb-3 pr-2 space-y-2">
+                  {guruData?.anggota_siswa?.map((s, i) => (
+                    <div key={i} className="flex justify-between items-center bg-black/20 py-2 px-3 rounded-xl text-sm border border-white/5">
+                      <span className="font-medium text-blue-50">{i + 1}. {s.nama}</span>
+                      <span className="text-[9px] uppercase font-bold bg-white/20 text-white px-2 py-1 rounded-full whitespace-nowrap ml-2">{s.daerah}</span>
                     </div>
-                    <h3 class="text-2xl font-extrabold text-slate-800">Ruang Pratinjau</h3>
-                    <p class="text-slate-500 font-medium mt-3 max-w-sm mx-auto leading-relaxed">Pilih menu, lengkapi pengaturan, dan hasil rancangan AI akan muncul di sini untuk Anda tinjau.</p>
+                  ))}
                 </div>
-                <!-- Result -->
-                <div id="view-result" class="hidden space-y-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-5 rounded-2xl border border-slate-200 shadow-sm gap-4 sticky top-4 z-20">
-                        <div class="flex items-center gap-4">
-                            <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]"></div>
-                            <div>
-                                <span class="text-sm font-extrabold text-slate-800 block">Pratinjau Hasil</span>
-                                <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mt-1 block" id="result-type-label">BUTIR SOAL</span>
-                            </div>
-                        </div>
-                        <div id="export-actions" class="flex gap-2 flex-wrap justify-end items-center"></div>
-                    </div>
-                    <div id="render-area" class="space-y-5 relative"></div>
-                </div>
-                <!-- History -->
-                <div id="view-history" class="hidden space-y-5">
-                    <div class="flex items-center justify-between px-2 mb-6">
-                        <h3 class="text-2xl font-extrabold text-slate-800">Riwayat File Drive</h3>
-                        <span class="bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-extrabold px-3 py-1.5 rounded-lg flex items-center gap-2"><i class="fas fa-cloud text-sm"></i>NATIVE DRIVE SYNC</span>
-                    </div>
-                    <div id="history-list" class="grid gap-4"></div>
-                </div>
-                <!-- Profile -->
-                <div id="view-profile" class="hidden space-y-6 max-w-3xl mx-auto">
-                    <div class="flex items-center justify-between px-2 mb-4">
-                        <h3 class="text-2xl font-extrabold text-slate-800">Profil Pengguna</h3>
-                    </div>
-                    <!-- Kartu Profil -->
-                    <div class="glass-card p-8 border-slate-200 shadow-sm relative overflow-hidden">
-                        <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-indigo-500 rounded-full opacity-10 blur-3xl pointer-events-none"></div>
-                        <div class="flex flex-col md:flex-row gap-8 items-center md:items-start relative z-10">
-                            <div class="flex flex-col items-center gap-4">
-                                <div class="w-32 h-32 rounded-[2rem] border-4 border-indigo-50 shadow-lg overflow-hidden bg-white flex items-center justify-center text-6xl transition-transform hover:scale-105" id="profile-avatar-display">👤</div>
-                                <button onclick="UIModule.openAvatarSelector()" class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl hover:bg-indigo-100 transition-colors shadow-sm">
-                                    <i class="fas fa-pencil-alt mr-1"></i>Ubah Avatar
-                                </button>
-                            </div>
-                            <div class="flex-1 w-full text-center md:text-left space-y-4">
-                                <div>
-                                    <h4 class="text-2xl font-extrabold text-slate-800" id="profile-name">Memuat Nama...</h4>
-                                    <p class="text-slate-500 font-medium" id="profile-email">email@example.com</p>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4 mt-6">
-                                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                                        <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Status Paket</p>
-                                        <p class="text-xl font-black text-indigo-600" id="profile-tier-detail">FREE</p>
-                                        <p class="text-xs font-bold text-slate-500 mt-2 hidden" id="profile-expired-detail">Masa Aktif: <span class="text-amber-500">0 Hari</span></p>
-                                    </div>
-                                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                                        <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Sisa Poin Harian</p>
-                                        <p class="text-xl font-black text-indigo-600" id="profile-points-detail">0 / 0</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Avatar Selector -->
-                    <div id="avatar-selector" class="hidden glass-card p-6 border-slate-200 mt-4">
-                        <div class="flex justify-between items-center mb-4">
-                            <p class="text-sm font-bold text-slate-700">Pilih Karakter Favorit Anda:</p>
-                            <button onclick="document.getElementById('avatar-selector').classList.add('hidden')" class="text-slate-400 hover:text-red-500"><i class="fas fa-times"></i></button>
-                        </div>
-                        <div class="flex flex-wrap gap-4 justify-center">
-                            <button onclick="UIModule.setAvatar('👨‍🏫')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👨‍🏫</button>
-                            <button onclick="UIModule.setAvatar('👩‍🏫')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👩‍🏫</button>
-                            <button onclick="UIModule.setAvatar('👨‍🔬')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👨‍🔬</button>
-                            <button onclick="UIModule.setAvatar('👩‍🔬')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👩‍🔬</button>
-                            <button onclick="UIModule.setAvatar('🧕')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🧕</button>
-                            <button onclick="UIModule.setAvatar('👳‍♂️')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👳‍♂️</button>
-                            <button onclick="UIModule.setAvatar('🎓')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🎓</button>
-                            <button onclick="UIModule.setAvatar('🦉')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🦉</button>
-                            <button onclick="UIModule.setAvatar('🤖')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">🤖</button>
-                            <button onclick="UIModule.setAvatar('👤')" class="text-4xl p-3 bg-white rounded-2xl shadow-sm hover:scale-110 border border-slate-200 hover:border-indigo-400 transition-all">👤</button>
-                        </div>
-                    </div>
-                    <!-- Banner Upgrade PRO -->
-                    <div class="bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 rounded-[2rem] p-8 md:p-10 text-white relative overflow-hidden shadow-2xl mt-8 border border-indigo-700">
-                        <div class="absolute top-0 right-0 p-8 opacity-20 pointer-events-none"><i class="fas fa-crown text-9xl text-yellow-400"></i></div>
-                        <div class="relative z-10 flex flex-col md:flex-row gap-8 items-center">
-                            <div class="flex-1 text-center md:text-left">
-                                <div class="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest text-indigo-100 mb-5 border border-white/20 backdrop-blur-sm">
-                                    <i class="fas fa-star text-yellow-400"></i>Penawaran Eksklusif Early Bird
-                                </div>
-                                <h3 class="text-3xl md:text-4xl font-black mb-4 leading-tight">Tingkatkan Kapasitas AI Anda!</h3>
-                                <p class="text-indigo-200 font-medium mb-6 text-sm md:text-base leading-relaxed max-w-lg">Dapatkan batas poin 5x lipat lebih tinggi dan akses fitur analisis HOTS kelas dunia.</p>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 max-w-lg mx-auto md:mx-0">
-                                    <div class="bg-white/10 border border-white/20 rounded-2xl p-5 hover:bg-white/20 transition-all text-left">
-                                        <div class="text-indigo-200 text-[10px] font-bold uppercase tracking-widest mb-1">Paket 6 Bulan</div>
-                                        <div class="text-sm text-slate-300 line-through decoration-red-500 decoration-2 mb-1">Rp150.000</div>
-                                        <div class="text-2xl font-black text-white">Rp59.000</div>
-                                        <div class="text-[10px] text-indigo-100 bg-indigo-500/40 inline-block px-2 py-1 rounded font-bold mt-1">Jatuhnya Rp9.800/bln</div>
-                                    </div>
-                                    <div class="bg-gradient-to-br from-yellow-400 to-amber-500 border-2 border-yellow-300 rounded-2xl p-5 transform sm:-translate-y-2 shadow-xl relative overflow-hidden text-left">
-                                        <div class="absolute top-0 right-0 bg-red-600 text-white text-[9px] font-black px-3 py-1 rounded-bl-lg">BEST SELLER</div>
-                                        <div class="text-yellow-900 text-[10px] font-bold uppercase tracking-widest mb-1">Paket 1 Tahun</div>
-                                        <div class="text-sm text-yellow-800 line-through decoration-red-600 decoration-2 mb-1">Rp250.000</div>
-                                        <div class="text-3xl font-black text-yellow-950">Rp99.000</div>
-                                        <div class="text-[10px] text-amber-900 bg-white/40 inline-block px-2 py-1 rounded font-bold shadow-sm mt-1">Cuma Rp8.250/bln!</div>
-                                    </div>
-                                </div>
-                                <button onclick="window.open('https://wa.me/6285640116543?text=Halo%20Admin%20Hanfa,%20saya%20tertarik%20upgrade%20ke%20PRO','_blank')" class="bg-gradient-to-r from-yellow-400 to-amber-500 text-yellow-950 font-black py-4 px-8 rounded-2xl shadow-[0_0_20px_rgba(250,204,21,0.4)] transition-transform hover:scale-105 active:scale-95 w-full md:w-auto flex items-center justify-center md:inline-flex gap-3 text-base md:text-lg">
-                                    <i class="fab fa-whatsapp text-xl"></i>Klaim Diskon Sekarang
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Support Center -->
-                    <div class="glass-card p-6 border-slate-200 shadow-sm mt-6">
-                        <div class="flex flex-col md:flex-row gap-6 items-center">
-                            <div class="flex items-center gap-4 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-100 pb-6 md:pb-0 md:pr-6">
-                                <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex-shrink-0">
-                                    <img src="image.png" alt="Logo Hanfa AI" class="w-12 h-12 object-contain" onerror="this.src='https://www.gstatic.com/images/branding/product/2x/apps_script_48dp.png'">
-                                </div>
-                                <div>
-                                    <h4 class="text-xl font-black text-slate-800 tracking-tight">Hanfa AI</h4>
-                                    <p class="text-xs text-indigo-600 font-bold uppercase tracking-widest">Support Center</p>
-                                </div>
-                            </div>
-                            <div class="text-center md:text-left flex-grow">
-                                <h4 class="text-lg font-extrabold text-slate-800 mb-2"><i class="fas fa-headset text-indigo-500 mr-2"></i>Bantuan & Dukungan</h4>
-                                <p class="text-sm text-slate-500 leading-relaxed max-w-xs mx-auto md:mx-0">Butuh bantuan teknis atau memiliki pertanyaan? Hubungi tim developer kami.</p>
-                            </div>
-                            <div class="flex flex-col gap-3 w-full md:w-72">
-                                <a href="mailto:hanfa.edutech@gmail.com" class="group flex items-center gap-3 p-3 bg-slate-50 hover:bg-white border border-transparent hover:border-indigo-200 rounded-xl transition-all shadow-sm hover:shadow-md">
-                                    <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><i class="fas fa-envelope"></i></div>
-                                    <div class="flex flex-col text-left">
-                                        <span class="text-[10px] uppercase font-bold text-slate-400">Email Kami</span>
-                                        <span class="text-sm font-bold text-slate-700">hanfa.edutech@gmail.com</span>
-                                    </div>
-                                </a>
-                                <a href="https://www.instagram.com/hanfa.edutech" target="_blank" class="group flex items-center gap-3 p-3 bg-slate-50 hover:bg-white border border-transparent hover:border-pink-200 rounded-xl transition-all shadow-sm hover:shadow-md">
-                                    <div class="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center text-pink-600 group-hover:bg-pink-600 group-hover:text-white transition-colors"><i class="fab fa-instagram"></i></div>
-                                    <div class="flex flex-col text-left">
-                                        <span class="text-[10px] uppercase font-bold text-slate-400">Instagram</span>
-                                        <span class="text-sm font-bold text-slate-700">@hanfa.edutech</span>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- /view-profile -->
-            </div>
-            <!-- /preview-container -->
+                <button
+                  onClick={(e) => { e.stopPropagation(); openEditSiswa(); }}
+                  className="w-full py-2.5 bg-white text-blue-700 rounded-xl text-sm font-bold flex items-center justify-center transition-transform active:scale-95 shadow-md"
+                >
+                  <Edit3 size={16} className="mr-2" /> Edit / Update Anggota
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-    </div>
-</main>
 
-<!-- TOAST NOTIFIKASI -->
-<div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 opacity-0 transition-all z-[100] translate-y-20 pointer-events-none w-[90%] md:w-auto max-w-md border border-slate-700">
-    <i id="toast-icon" class="fas fa-info-circle text-indigo-400 text-xl"></i>
-    <span id="toast-msg" class="text-sm font-bold"></span>
-</div>
-
-<script>
-// ==========================================
-// KONFIGURASI — hanya Client ID, URL GAS tetap di sini
-// ==========================================
-const GOOGLE_CLIENT_ID = '655941024907-d4n5t4f06kemdka2gav9j2e3629mecoj.apps.googleusercontent.com';
-const GAS_API_URL      = 'https://script.google.com/macros/s/AKfycbzXQNIuAuCh_YcLy-q1yFq-Wmhjkebb3BTMySpLcTTJPydLx8nXyvChFhYtRIvMExs0rQ/exec';
-
-// Token disimpan HANYA di memori — tidak pernah ke localStorage
-let tokenClient      = null;
-let userAccessToken  = null;   // ← HANYA di memori, tidak di-persist
-let userEmailStr     = 'guest@hanfa.ai';
-let userFullNameStr  = 'Guru Hebat';
-
-// Tracking proses generate yang sedang berjalan
-let _generateInProgress = false;   // true jika ada proses generate aktif
-let _generateModeActive = null;    // mode saat generate dimulai (SOAL/SLIDE/LKPD)
-
-// ==========================================
-// UTILS
-// ==========================================
-const Utils = {
-    escapeHTML: function(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>"']/g, m =>
-            ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]
-        );
-    },
-    // FIX: strip event handler dan script dari SVG sebelum diinjek ke DOM
-    sanitizeSVG: function(svgStr) {
-        if (!svgStr || typeof svgStr !== 'string') return '';
-        return svgStr
-            .replace(/<script[\s\S]*?<\/script>/gi, '')
-            .replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '')
-            .replace(/javascript\s*:/gi, '')
-            .replace(/<iframe[\s\S]*?>/gi, '')
-            .replace(/<object[\s\S]*?>/gi, '');
-    },
-    copyToClipboard: function(text) {
-        if (navigator.clipboard && window.isSecureContext) {
-            return navigator.clipboard.writeText(text);
-        }
-        return new Promise((resolve, reject) => {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.style.cssText = 'position:fixed;opacity:0';
-            document.body.appendChild(ta);
-            ta.select();
-            try { document.execCommand('copy'); resolve(); }
-            catch (err) { reject(err); }
-            finally { document.body.removeChild(ta); }
-        });
-    }
-};
-
-// ==========================================
-// STATE MODULE
-// ==========================================
-const StateModule = {
-    currentMode: 'SOAL',
-    appState: { soalData: [] },
-    init: function() {
-        try {
-            const local = JSON.parse(localStorage.getItem('hanfaState'));
-            if (local) this.appState = local;
-        } catch(e) {}
-    },
-    save: function() {
-        try { localStorage.setItem('hanfaState', JSON.stringify(this.appState)); } catch(e) {}
-    },
-    clearData: function() {
-        this.appState = { soalData: [] };
-        this.save();
-    }
-};
-
-// ==========================================
-// AUTH MODULE
-// ==========================================
-const AuthModule = {
-    inactivityTimer: null,
-    INACTIVITY_LIMIT: 15 * 60 * 1000,
-
-    init: function() {
-        if (typeof google === 'undefined' || !google.accounts) return;
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: GOOGLE_CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email profile',
-            callback: (tokenResponse) => {
-                if (tokenResponse && tokenResponse.error) {
-                    this._showLoginError('Login gagal: ' + tokenResponse.error);
-                    return;
-                }
-                if (tokenResponse && tokenResponse.access_token) {
-                    // Token hanya disimpan di memori
-                    userAccessToken = tokenResponse.access_token;
-                    fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                        headers: { Authorization: 'Bearer ' + userAccessToken }
-                    })
-                    .then(res => {
-                        if (!res.ok) throw new Error('Gagal mengambil profil Google.');
-                        return res.json();
-                    })
-                    .then(data => {
-                        userEmailStr    = data.email || 'user@hanfa.ai';
-                        userFullNameStr = data.name || data.given_name || userEmailStr.split('@')[0] || 'Guru Hebat';
-                        // Simpan hanya nama & email ke localStorage (BUKAN token)
-                        localStorage.setItem('hanfaUserInfo', JSON.stringify({
-                            email: userEmailStr,
-                            name:  userFullNameStr
-                        }));
-                        localStorage.setItem('hanfaLastActivity', Date.now().toString());
-                        this.processLoginSuccess(userFullNameStr, userEmailStr);
-                    })
-                    .catch(err => {
-                        console.error('[AuthModule] Gagal ambil userinfo:', err);
-                        this._showLoginError('Gagal memuat profil Google. Coba lagi.');
-                    });
-                }
-            }
-        });
-    },
-
-    processLoginSuccess: function(userName, email) {
-        userFullNameStr = userName;
-        document.getElementById('login-overlay').classList.add('opacity-0', 'pointer-events-none');
-        document.getElementById('btn-logout').classList.remove('hidden');
-        document.getElementById('login-error').classList.add('hidden');
-
-        document.getElementById('user-email').innerText = Utils.escapeHTML(email);
-        const profileEmailEl = document.getElementById('profile-email');
-        const profileNameEl  = document.getElementById('profile-name');
-        if (profileEmailEl) profileEmailEl.innerText = Utils.escapeHTML(email);
-        if (profileNameEl)  profileNameEl.innerText  = Utils.escapeHTML(userName);
-
-        const savedAvatar       = localStorage.getItem('hanfaAvatar') || '👤';
-        document.getElementById('sidebar-avatar').innerText = savedAvatar;
-        const profileAvatarEl   = document.getElementById('profile-avatar-display');
-        if (profileAvatarEl) profileAvatarEl.innerText = savedAvatar;
-
-        this.setupAutoLogout();
-
-        // Bersihkan state lama yang berisi placeholder "ilustrasi di bawah ini"
-        if (StateModule.appState.soalData.length > 0 &&
-            String(StateModule.appState.soalData[0].tanya).includes('ilustrasi di bawah ini')) {
-            StateModule.clearData();
-            document.getElementById('view-result').classList.add('hidden');
-            document.getElementById('view-empty').classList.remove('hidden');
-        }
-
-        APIModule.call({ fitur: 'PROFILE' }).then(res => {
-            if (res && res.status === 'success') {
-                UIModule.updateProfileUI(res.data);
-                UIModule.showToast('Selamat datang, ' + Utils.escapeHTML(userName) + '!', 'fas fa-check-circle');
-            }
-        });
-    },
-
-    setupAutoLogout: function() {
-        const resetTimer = () => {
-            clearTimeout(this.inactivityTimer);
-            localStorage.setItem('hanfaLastActivity', Date.now().toString());
-            this.inactivityTimer = setTimeout(() => this.logout(true), this.INACTIVITY_LIMIT);
-        };
-        ['mousemove','keydown','click','scroll','touchstart'].forEach(evt =>
-            document.addEventListener(evt, resetTimer, { passive: true })
-        );
-        resetTimer();
-    },
-
-    // FIX: checkExistingSession sekarang hanya restore nama/email (bukan token)
-    // Token harus di-refresh ulang — pengguna perlu klik login lagi jika page di-refresh
-    // Ini desain yang lebih aman: token tidak pernah tersimpan di localStorage
-    checkExistingSession: function() {
-        const lastActivity = localStorage.getItem('hanfaLastActivity');
-        const userInfo     = localStorage.getItem('hanfaUserInfo');
-
-        if (lastActivity && userInfo) {
-            const elapsed = Date.now() - parseInt(lastActivity);
-            if (elapsed < this.INACTIVITY_LIMIT) {
-                // Sesi masih dalam batas waktu — tampilkan nama tapi minta login ulang
-                // karena token tidak tersimpan (by design, lebih aman)
-                try {
-                    const info = JSON.parse(userInfo);
-                    // Isi UI dengan info yang tersimpan
-                    document.getElementById('user-email').innerText = Utils.escapeHTML(info.email || '');
-                    const profileNameEl  = document.getElementById('profile-name');
-                    const profileEmailEl = document.getElementById('profile-email');
-                    if (profileNameEl)  profileNameEl.innerText  = Utils.escapeHTML(info.name  || '');
-                    if (profileEmailEl) profileEmailEl.innerText = Utils.escapeHTML(info.email || '');
-                    const savedAvatar = localStorage.getItem('hanfaAvatar') || '👤';
-                    document.getElementById('sidebar-avatar').innerText = savedAvatar;
-                } catch(e) {}
-                // Login overlay tetap tampil — pengguna harus klik login lagi untuk mendapat token baru
-                // Ini trade-off keamanan yang disengaja
-            } else {
-                // Waktu sudah lewat, bersihkan info lama
-                this.logout(false);
-            }
-        }
-    },
-
-    loginWithGoogle: function() {
-        if (typeof google === 'undefined' || !google.accounts) {
-            this._showLoginError('Library Google Auth belum siap. Coba refresh halaman atau periksa koneksi.');
-            return;
-        }
-        if (!tokenClient) this.init();
-        if (tokenClient) {
-            tokenClient.requestAccessToken();
-        } else {
-            this._showLoginError('Gagal memuat sistem login Google. Coba refresh halaman.');
-        }
-    },
-
-    bypassLoginPreview: function() {
-        userAccessToken = 'DUMMY_TOKEN_PREVIEW';
-        document.getElementById('login-overlay').classList.add('opacity-0', 'pointer-events-none');
-        document.getElementById('btn-logout').classList.remove('hidden');
-        UIModule.updateProfileUI({ email: 'guest@hanfa.ai', tier: 'PREVIEW', sisa: 10, max: 10 });
-        const profileNameEl  = document.getElementById('profile-name');
-        const profileEmailEl = document.getElementById('profile-email');
-        if (profileNameEl)  profileNameEl.innerText  = 'Pengguna Pratinjau';
-        if (profileEmailEl) profileEmailEl.innerText = 'guest@hanfa.ai';
-        UIModule.showToast('Masuk dalam Mode Pratinjau', 'fas fa-eye');
-    },
-
-    logout: function(autoLoggedOut) {
-        userAccessToken = null;
-        clearTimeout(this.inactivityTimer);
-        localStorage.removeItem('hanfaUserInfo');
-        localStorage.removeItem('hanfaLastActivity');
-
-        document.getElementById('user-email').innerText  = 'Menunggu Login...';
-        document.getElementById('user-tier').innerText   = 'Memuat Tier';
-        document.getElementById('point-text').innerText  = '0 / 0';
-        document.getElementById('point-bar').style.width = '0%';
-        document.getElementById('btn-logout').classList.add('hidden');
-        document.getElementById('login-overlay').classList.remove('opacity-0', 'pointer-events-none');
-
-        StateModule.clearData();
-        document.getElementById('view-result').classList.add('hidden');
-        document.getElementById('view-history').classList.add('hidden');
-        const vp = document.getElementById('view-profile');
-        if (vp) vp.classList.add('hidden');
-        document.getElementById('view-empty').classList.remove('hidden');
-
-        UIModule.showToast(
-            autoLoggedOut ? 'Sesi berakhir karena tidak aktif 15 menit.' : 'Berhasil Logout & Cache Bersih.',
-            autoLoggedOut ? 'fas fa-clock' : 'fas fa-check'
-        );
-    },
-
-    _showLoginError: function(msg) {
-        const el = document.getElementById('login-error');
-        if (el) { el.innerText = msg; el.classList.remove('hidden'); }
-    }
-};
-
-// ==========================================
-// API MODULE
-// ==========================================
-const APIModule = {
-    fetchWithRetry: async function(url, options, retries) {
-        retries = retries === undefined ? 2 : retries;
-        try {
-            const response = await fetch(url, options);
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            return response;
-        } catch(err) {
-            if (retries > 0) {
-                await new Promise(r => setTimeout(r, 1500));
-                return this.fetchWithRetry(url, options, retries - 1);
-            }
-            throw err;
-        }
-    },
-
-    call: async function(payloadData) {
-        if (!userAccessToken) {
-            UIModule.showToast('Sesi Google terputus. Silakan login kembali.', 'fas fa-lock');
-            return null;
-        }
-
-        const finalPayload = {
-            accessToken: userAccessToken,
-            fitur:       payloadData.fitur,
-            params:      payloadData.params || {}
-        };
-        if (!finalPayload.params.name && userFullNameStr) {
-            finalPayload.params.name = userFullNameStr;
-        }
-
-        if (userAccessToken === 'DUMMY_TOKEN_PREVIEW') {
-            return this.simulateBackend(finalPayload);
-        }
-
-        try {
-            const response = await this.fetchWithRetry(GAS_API_URL, {
-                method:  'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body:    JSON.stringify(finalPayload)
-            });
-            return await response.json();
-        } catch(e) {
-            console.error('[APIModule] Error:', e);
-            throw new Error('Gagal menghubungi server. Periksa koneksi Anda.');
-        }
-    },
-
-    simulateBackend: function(payload) {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                const includeVisuals = payload.params && payload.params.visuals === true;
-                if (payload.fitur === 'SOAL' || payload.fitur === 'REGENERATE') {
-                    resolve({
-                        status: 'success',
-                        msg: 'Data disimulasikan (Mode Pratinjau).',
-                        data: Array.from({ length: Math.min(payload.params.jumlah || 1, 10) }, (_, i) => {
-                            let hasVisual = includeVisuals && Math.random() > 0.6;
-                            let mockVisual = null;
-                            let isSvg = false;
-                            if (hasVisual) {
-                                if (Math.random() > 0.5) {
-                                    mockVisual = 'https://images.unsplash.com/photo-1632516643720-e7f0d7e6a739?auto=format&fit=crop&w=400&q=80';
-                                } else {
-                                    mockVisual = '<svg width="120" height="120" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="#4f46e5" stroke-width="4" fill="#eef2ff"/><text x="50" y="55" font-family="Arial" font-size="12" text-anchor="middle" fill="#4f46e5">Ilustrasi AI</text></svg>';
-                                    isSvg = true;
-                                }
-                            }
-                            return {
-                                tanya: 'Perhatikan data berikut. Pada sebuah ekosistem pantai, ditemukan fakta bahwa ' +
-                                       (payload.params.topik || 'topik materi') + ' memengaruhi keseimbangan lingkungan.\n\nBerdasarkan data tersebut, kesimpulan yang paling tepat adalah?',
-                                gambar:     isSvg ? null : mockVisual,
-                                svg:        isSvg ? mockVisual : null,
-                                opsi:       payload.params.tipe === 'URAIAN' || payload.params.tipe === 'ISIAN' ? []
-                                          : payload.params.tipe === 'BS' ? ['Benar','Salah']
-                                          : ['Opsi A (Simulasi)','Opsi B (Simulasi)','Opsi C (Simulasi)','Opsi D (Simulasi)'],
-                                kunci:      0,
-                                level:      i % 2 === 0 ? 'C4' : 'C2',
-                                difficulty: 'Medium',
-                                pembahasan: 'Jawaban A benar karena... (Simulasi Pembahasan).'
-                            };
-                        })
-                    });
-                } else if (payload.fitur === 'SLIDE') {
-                    resolve({ status: 'success', msg: 'Simulasi: Slide AI berhasil di-generate', url: '#' });
-                } else if (payload.fitur === 'LKPD') {
-                    resolve({ status: 'success', msg: 'Simulasi: Modul LKPD dirancang', url: '#' });
-                } else if (payload.fitur === 'RIWAYAT') {
-                    resolve({ status: 'success', data: [{ nama: 'Materi Simulasi', url: '#', tipe: 'SOAL', diubah: 'Hari ini' }] });
-                } else if (payload.fitur === 'PROFILE') {
-                    resolve({ status: 'success', data: { email: 'guest@hanfa.ai', tier: 'PREVIEW', sisa: 10, max: 10 } });
-                } else if (payload.fitur === 'EXPORT') {
-                    resolve({ status: 'success', msg: 'Simulasi: Export berhasil', url: '#' });
-                } else if (payload.fitur === 'REGENERATE') {
-                    resolve({ status: 'success', data: {
-                        tanya: 'Soal baru hasil regenerasi (Simulasi).',
-                        opsi: ['A','B','C','D'], kunci: 1, level: 'C5', difficulty: 'Hard',
-                        pembahasan: 'Pembahasan simulasi.', gambar: null, svg: null
-                    }});
-                }
-            }, 1500);
-        });
-    }
-};
-
-// ==========================================
-// UI MODULE
-// ==========================================
-const UIModule = {
-    setAvatar: function(emoji) {
-        localStorage.setItem('hanfaAvatar', emoji);
-        document.getElementById('sidebar-avatar').innerText = emoji;
-        const el = document.getElementById('profile-avatar-display');
-        if (el) el.innerText = emoji;
-        const sel = document.getElementById('avatar-selector');
-        if (sel) sel.classList.add('hidden');
-        this.showToast('Avatar berhasil diperbarui!', 'fas fa-check-circle');
-    },
-    openAvatarSelector: function() {
-        const el = document.getElementById('avatar-selector');
-        if (el) el.classList.remove('hidden');
-    },
-    updateProfileUI: function(profile) {
-        document.getElementById('user-email').innerText = Utils.escapeHTML(profile.email);
-        let tierText = 'PAKET: ' + Utils.escapeHTML(profile.tier);
-        if (profile.tier === 'PRO' && profile.sisaHari != null) tierText += ' (' + profile.sisaHari + ' Hari Lagi)';
-        document.getElementById('user-tier').innerText = tierText;
-
-        const tierDetailEl = document.getElementById('profile-tier-detail');
-        if (tierDetailEl) tierDetailEl.innerText = Utils.escapeHTML(profile.tier);
-
-        const expDetail = document.getElementById('profile-expired-detail');
-        if (expDetail) {
-            if (profile.tier === 'PRO' && profile.sisaHari != null) {
-                expDetail.classList.remove('hidden');
-                expDetail.innerHTML = 'Masa Aktif: <span class="text-amber-500">' + profile.sisaHari + ' Hari Lagi</span>';
-            } else {
-                expDetail.classList.add('hidden');
-            }
-        }
-
-        const pointsStr = profile.sisa + ' / ' + profile.max;
-        document.getElementById('point-text').innerText = pointsStr;
-        const profPointsEl = document.getElementById('profile-points-detail');
-        if (profPointsEl) profPointsEl.innerText = pointsStr;
-
-        const pct      = profile.max > 0 ? (profile.sisa / profile.max) * 100 : 0;
-        const pointBar = document.getElementById('point-bar');
-        pointBar.style.width = pct + '%';
-
-        if (pct <= 20) {
-            pointBar.style.background       = '#ef4444';
-            document.getElementById('point-text').style.color = '#dc2626';
-            if (profPointsEl) profPointsEl.style.color        = '#dc2626';
-        } else {
-            pointBar.style.background       = '#6366f1';
-            document.getElementById('point-text').style.color = '#4f46e5';
-            if (profPointsEl) profPointsEl.style.color        = '#4f46e5';
-        }
-    },
-    toggleSidebar: function() {
-        document.getElementById('sidebar').classList.toggle('-translate-x-full');
-        document.getElementById('overlay').classList.toggle('hidden');
-    },
-    switchView: function(mode) {
-        StateModule.currentMode = mode;
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        const activeNav = document.getElementById('menu-' + mode);
-        if (activeNav) activeNav.classList.add('active');
-
-        const configContainer = document.getElementById('config-container');
-        const viewEmpty       = document.getElementById('view-empty');
-        const viewResult      = document.getElementById('view-result');
-        const viewHistory     = document.getElementById('view-history');
-        const viewProfile     = document.getElementById('view-profile');
-        const soalOptions     = document.getElementById('soal-options');
-        const lkpdOptions     = document.getElementById('lkpd-options');
-        const jmlWrapper      = document.getElementById('jml-wrapper');
-        const title           = document.getElementById('view-title');
-        const desc            = document.getElementById('view-desc');
-
-        // Reset semua view
-        configContainer.classList.remove('hidden');
-        viewEmpty.classList.remove('hidden');
-        viewResult.classList.add('hidden');
-        viewHistory.classList.add('hidden');
-        if (viewProfile) viewProfile.classList.add('hidden');
-
-        // FIX: Reset label pratinjau agar tidak menampilkan label dari mode sebelumnya
-        const resultLabel = document.getElementById('result-type-label');
-        if (resultLabel) {
-            const labelMap = { SOAL:'BUTIR SOAL', SLIDE:'SLIDE PRESENTASI', LKPD:'MODUL / RPP' };
-            resultLabel.innerText = labelMap[mode] || '';
-        }
-
-        // Tampilkan status bar jika ada proses generate yang sedang berjalan
-        UIModule.updateGenerateStatusBar();
-
-        if (mode === 'SOAL') {
-            title.innerText = 'Pembuat Soal';
-            desc.innerText  = 'AI akan merancang evaluasi berkualitas tinggi.';
-            soalOptions.classList.remove('hidden');
-            if (lkpdOptions) lkpdOptions.classList.add('hidden');
-            jmlWrapper.classList.remove('hidden');
-            document.getElementById('jml-label').innerText = 'Jumlah Soal';
-            document.getElementById('jumlah').max = '50';
-            if (StateModule.appState.soalData.length > 0) {
-                viewEmpty.classList.add('hidden');
-                viewResult.classList.remove('hidden');
-                this.renderSoalFromState();
-            }
-        } else if (mode === 'SLIDE') {
-            title.innerText = 'Pembuat Slide';
-            desc.innerText  = 'Materi visual ditata otomatis ke Google Slide.';
-            soalOptions.classList.add('hidden');
-            if (lkpdOptions) lkpdOptions.classList.add('hidden');
-            jmlWrapper.classList.remove('hidden');
-            document.getElementById('jml-label').innerText = 'Jumlah Slide';
-            document.getElementById('jumlah').max = '20';
-        } else if (mode === 'LKPD') {
-            title.innerText = 'Pembuat Modul / RPP';
-            desc.innerText  = 'Rancangan Modul Ajar, RPP & Lembar Kerja Siswa interaktif.';
-            soalOptions.classList.add('hidden');
-            if (lkpdOptions) lkpdOptions.classList.remove('hidden');
-            jmlWrapper.classList.add('hidden');
-        } else if (mode === 'RIWAYAT') {
-            configContainer.classList.add('hidden');
-            viewEmpty.classList.add('hidden');
-            viewHistory.classList.remove('hidden');
-            CoreLogic.fetchHistory();
-        } else if (mode === 'PROFILE') {
-            configContainer.classList.add('hidden');
-            viewEmpty.classList.add('hidden');
-            if (viewProfile) viewProfile.classList.remove('hidden');
-        }
-
-        if (window.innerWidth < 1024) this.toggleSidebar();
-    },
-    // FIX: validasi jumlah input sesuai mode
-    validateJumlah: function(input) {
-        const maxVal = StateModule.currentMode === 'SLIDE' ? 20 : 50;
-        const val    = parseInt(input.value);
-        if (val > maxVal) {
-            input.value = maxVal;
-            this.showToast('Maksimal ' + maxVal + ' item untuk fitur ini.', 'fas fa-info-circle');
-        }
-        if (val < 1) input.value = 1;
-    },
-    toggleDropdown: function(id) {
-        document.querySelectorAll('[id^="regen-drop-"]').forEach(el => {
-            if (el.id !== id) el.classList.add('hidden');
-        });
-        document.getElementById(id).classList.toggle('hidden');
-    },
-    toggleSlider: function() {
-        const val = document.getElementById('tingkat').value;
-        document.getElementById('slider-box').classList.toggle('hidden', val !== 'MIX');
-    },
-    updateRatio: function(val) {
-        document.getElementById('label-left').innerText  = 'C1-C3: ' + (100 - val) + '%';
-        document.getElementById('label-right').innerText = 'C4-C6: ' + val + '%';
-    },
-    setRef: function(type) {
-        document.querySelectorAll('.ref-btn').forEach(btn => {
-            btn.className = 'ref-btn bg-white border border-slate-200 text-slate-500 text-[10px] font-extrabold py-2.5 rounded-xl hover:bg-slate-100 transition-all';
-        });
-        const activeBtn = document.getElementById('ref-' + type);
-        if (activeBtn) activeBtn.className = 'ref-btn active bg-indigo-600 shadow-md text-white border border-indigo-600 text-[10px] font-extrabold py-2.5 rounded-xl transition-all';
-
-        const inputArea = document.getElementById('ref-input');
-        if (type === 'AI') {
-            inputArea.innerHTML = '<div class="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex gap-3 items-center"><i class="fas fa-database text-indigo-400 text-lg"></i><p class="text-xs text-slate-600 font-medium leading-relaxed">Menggunakan basis data internal AI untuk menyusun konten.</p></div>';
-        } else if (type === 'TEXT') {
-            inputArea.innerHTML = '<textarea id="ref-text-val" class="form-input text-sm h-32 leading-relaxed" placeholder="Tempel/Paste materi rujukan Anda di sini (Maks 1000 kata). AI akan patuh pada teks ini..."></textarea>';
-        }
-    },
-    showToast: function(msg, iconClass) {
-        const t = document.getElementById('toast');
-        document.getElementById('toast-msg').innerText   = msg;
-        document.getElementById('toast-icon').className  = (iconClass || 'fas fa-info-circle') + ' text-xl';
-        t.classList.remove('opacity-0', 'translate-y-20', 'pointer-events-none');
-        setTimeout(() => t.classList.add('opacity-0', 'translate-y-20', 'pointer-events-none'), 4000);
-    },
-    showUpgradeModal: function() {
-        document.getElementById('upgrade-modal').classList.remove('opacity-0', 'pointer-events-none');
-    },
-
-    // Status bar generate persisten — tetap terlihat meski pindah menu
-    updateGenerateStatusBar: function() {
-        const barId  = 'generate-status-bar';
-        const existing = document.getElementById(barId);
-        if (!_generateInProgress) {
-            if (existing) existing.remove();
-            return;
-        }
-        if (existing) return; // sudah ada, tidak perlu buat ulang
-        const modeLabel = { SOAL:'Soal', SLIDE:'Slide', LKPD:'Modul/RPP' };
-        const bar = document.createElement('div');
-        bar.id    = barId;
-        bar.className = 'fixed bottom-0 left-0 right-0 lg:left-72 bg-indigo-600 text-white z-[80] flex items-center gap-3 px-6 py-3 shadow-lg';
-        bar.innerHTML = `
-            <i class="fas fa-circle-notch fa-spin text-white text-sm"></i>
-            <span class="text-sm font-bold flex-1">
-                AI sedang merancang <span class="text-yellow-300">${modeLabel[_generateModeActive] || 'Konten'}</span>...
-                Anda bisa tetap menjelajah menu lain.
+        {/* Jadwal */}
+        <div className="px-5 pt-6 relative z-0">
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="font-bold text-gray-800 text-lg flex items-center">
+              <MapPin className="text-blue-600 mr-2" size={20} />
+              Rute Hari {guruData?.hari_ke}
+            </h3>
+            <span className="text-xs text-gray-600 font-bold bg-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm flex items-center">
+              <Clock size={12} className="mr-1.5 text-blue-600" />
+              {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
             </span>
-            <span class="text-[10px] font-bold bg-white/20 px-3 py-1 rounded-full">PROSES AKTIF</span>`;
-        document.body.appendChild(bar);
-    },
+          </div>
 
-    hideGenerateStatusBar: function() {
-        const bar = document.getElementById('generate-status-bar');
-        if (bar) {
-            bar.classList.add('translate-y-full');
-            setTimeout(() => bar.remove(), 300);
-        }
-    },
-
-    // Notifikasi sukses ekspor dengan link langsung + petunjuk riwayat
-    showExportSuccess: function(type, url, labelTipe) {
-        const ikonMap  = { DOC:'fa-file-word', PDF:'fa-file-pdf', FORM:'fa-list-check' };
-        const warnMap  = { DOC:'text-blue-600', PDF:'text-red-600', FORM:'text-purple-600' };
-        const ikon     = ikonMap[type]  || 'fa-file';
-        const warnaCls = warnMap[type]  || 'text-indigo-600';
-
-        const modalId = 'export-success-modal';
-        const existing = document.getElementById(modalId);
-        if (existing) existing.remove();
-
-        const modal = document.createElement('div');
-        modal.id    = modalId;
-        modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[95] flex items-center justify-center';
-        modal.innerHTML = `
-            <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-[90%] text-center border-t-4 border-green-500 animate-fade-in">
-                <div class="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-check-circle text-green-500 text-4xl"></i>
-                </div>
-                <h3 class="text-lg font-extrabold text-slate-800 mb-1">File Berhasil Dibuat!</h3>
-                <p class="text-sm text-slate-500 font-medium mb-5 leading-relaxed">
-                    File <strong>${labelTipe}</strong> sudah tersimpan di Google Drive Anda.
-                </p>
-                ${url && url !== '#' ? `
-                <a href="${encodeURI(url)}" target="_blank" rel="noopener noreferrer"
-                   class="w-full mb-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 text-sm transition-all block">
-                    <i class="fas ${ikon} ${warnaCls} bg-white/20 p-1 rounded"></i>
-                    Buka File Sekarang
-                    <i class="fas fa-external-link-alt text-xs opacity-70"></i>
-                </a>` : ''}
-                <button onclick="UIModule.switchView('RIWAYAT'); document.getElementById('${modalId}').remove();"
-                        class="w-full mb-3 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 font-bold py-3 rounded-2xl text-sm flex items-center justify-center gap-2 transition-all">
-                    <i class="fas fa-cloud-arrow-up text-indigo-500"></i>
-                    Lihat di Menu Riwayat Drive
-                </button>
-                <button onclick="document.getElementById('${modalId}').remove();"
-                        class="w-full text-slate-400 hover:text-slate-600 text-xs font-bold py-2 rounded-xl transition-colors">
-                    Tutup
-                </button>
-            </div>`;
-        document.body.appendChild(modal);
-        // Klik di luar modal untuk tutup
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) modal.remove();
-        });
-    },
-    showSkeletonLoader: function() {
-        const area = document.getElementById('render-area');
-        document.getElementById('export-actions').innerHTML = '';
-        area.innerHTML = Array(3).fill('<div class="glass-card p-6 lg:p-8 border border-slate-200 mb-5 relative overflow-hidden"><div class="absolute inset-0 bg-white/40 z-10 shimmer"></div><div class="flex justify-between mb-4"><div class="h-6 w-24 bg-slate-200 rounded-lg"></div><div class="h-8 w-16 bg-slate-200 rounded-lg"></div></div><div class="h-4 w-full bg-slate-200 rounded mb-2"></div><div class="h-4 w-5/6 bg-slate-200 rounded mb-6"></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3"><div class="h-12 w-full bg-slate-200 rounded-xl"></div><div class="h-12 w-full bg-slate-200 rounded-xl"></div></div></div>').join('');
-    },
-    renderSoalFromState: function() {
-        const area = document.getElementById('render-area');
-        try {
-            document.getElementById('export-actions').innerHTML = `
-                <button onclick="CoreLogic.exportReal('DOC')" class="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 text-xs font-extrabold rounded-xl hover:bg-blue-100 hover:shadow-md transition-all flex items-center gap-2"><i class="fas fa-file-word text-sm"></i>Ke DOC</button>
-                <button onclick="CoreLogic.exportReal('FORM')" class="px-4 py-2 bg-purple-50 text-purple-600 border border-purple-200 text-xs font-extrabold rounded-xl hover:bg-purple-100 hover:shadow-md transition-all flex items-center gap-2"><i class="fas fa-list-check text-sm"></i>Ke FORM</button>
-                <button onclick="CoreLogic.exportReal('PDF')" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 text-xs font-extrabold rounded-xl hover:bg-red-100 hover:shadow-md transition-all flex items-center gap-2"><i class="fas fa-file-pdf text-sm"></i>Ke PDF</button>
-            `;
-            let htmlBuffer = '';
-            StateModule.appState.soalData.forEach((item, i) => {
-                const labels = ['A','B','C','D','E'];
-                let opsiHtml = '';
-                if (item.opsi && item.opsi.length > 0) {
-                    opsiHtml = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">';
-                    item.opsi.forEach((o, idx) => {
-                        const isKunci  = idx === item.kunci;
-                        const safeOpsi = Utils.escapeHTML(o);
-                        opsiHtml += `<div class="p-3 border-2 rounded-xl flex items-center gap-3 text-sm font-medium transition-all ${isKunci ? 'bg-green-50 border-green-400 shadow-sm' : 'bg-white border-slate-200 hover:border-indigo-300'}">
-                            <span class="w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-lg text-[10px] font-black ${isKunci ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-500'}">${labels[idx]}</span>
-                            <span class="${isKunci ? 'text-green-900 font-bold' : 'text-slate-700'} leading-snug">${safeOpsi}</span>
-                            ${isKunci ? '<i class="fas fa-check-circle ml-auto text-green-500 text-lg"></i>' : ''}
-                        </div>`;
-                    });
-                    opsiHtml += '</div>';
-                } else {
-                    opsiHtml = '<div class="mt-4 p-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-center text-slate-400 text-sm font-medium">Area Jawaban Siswa (Uraian/Isian)</div>';
-                }
-
-                let visualHtml = '';
-                if (item.gambar) {
-                    const safeImgUrl = encodeURI(item.gambar);
-                    // Loading shimmer dulu, ganti dengan gambar jika berhasil
-                    // Jika gagal, sembunyikan kontainer agar tidak ada broken icon
-                    visualHtml = `<div class="mt-4 mb-4 rounded-xl border border-slate-200 shadow-sm bg-slate-50 relative" id="img-wrap-${i}" style="min-height:80px">
-                        <div id="img-shimmer-${i}" class="shimmer w-full rounded-xl" style="height:180px"></div>
-                        <img src="${safeImgUrl}" alt="Ilustrasi Soal"
-                             class="w-full h-auto max-h-64 object-contain rounded-xl hidden"
-                             id="img-el-${i}"
-                             onload="(function(){
-                                 var sh=document.getElementById('img-shimmer-${i}');
-                                 var el=document.getElementById('img-el-${i}');
-                                 var wr=document.getElementById('img-wrap-${i}');
-                                 if(sh) sh.remove();
-                                 if(el) el.classList.remove('hidden');
-                                 if(wr) wr.style.minHeight='';
-                             })()"
-                             onerror="(function(){
-                                 var wr=document.getElementById('img-wrap-${i}');
-                                 if(wr) wr.style.display='none';
-                             })()">
-                        <div class="absolute bottom-2 right-2 bg-slate-900/60 backdrop-blur-sm text-white text-[9px] px-2 py-1 rounded font-bold pointer-events-none" id="img-badge-${i}"><i class="fas fa-image"></i> Generated</div>
-                    </div>`;
-                    // Timeout 15 detik: jika shimmer masih ada (gambar belum load), sembunyikan
-                    // Gunakan closure dengan variabel i yang sudah tersedia di forEach
-                    (function(idx){
-                        setTimeout(function(){
-                            var sh = document.getElementById('img-shimmer-' + idx);
-                            var wr = document.getElementById('img-wrap-' + idx);
-                            if (sh && wr) wr.style.display = 'none';
-                        }, 15000);
-                    })(i);
-                } else if (item.svg) {
-                    // FIX: SVG disanitasi sebelum diinjek ke DOM
-                    const safeSvg = Utils.sanitizeSVG(item.svg);
-                    visualHtml = `<div class="mt-4 mb-4 py-6 px-4 rounded-xl border border-slate-200 bg-white flex justify-center shadow-sm relative">
-                        ${safeSvg}
-                        <div class="absolute bottom-2 right-2 bg-indigo-100 text-indigo-600 border border-indigo-200 text-[9px] px-2 py-1 rounded font-bold"><i class="fas fa-vector-square"></i> Vector AI</div>
-                    </div>`;
-                }
-
-                const tagColor = (item.level && (item.level.includes('C5') || item.level.includes('C6'))) ? 'bg-red-50 text-red-600 border-red-200'
-                               : (item.level && (item.level.includes('C3') || item.level.includes('C4'))) ? 'bg-amber-50 text-amber-600 border-amber-200'
-                               : 'bg-green-50 text-green-600 border-green-200';
-
-                const safeTanya = Utils.escapeHTML(item.tanya).replace(/\n/g, '<br>');
-                const safeBahas = item.pembahasan ? Utils.escapeHTML(item.pembahasan) : '';
-
-                htmlBuffer += `<div id="card-soal-${i}" class="glass-card p-6 lg:p-8 relative group border border-slate-200 hover:border-indigo-300 hover:shadow-lg transition-all overflow-hidden">
-                    <div class="flex flex-wrap justify-between items-start mb-4 gap-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100">SOAL #${i+1}</span>
-                            ${item.level ? `<span class="text-[10px] font-extrabold uppercase tracking-widest px-3 py-1.5 rounded-lg border ${tagColor}">${Utils.escapeHTML(item.level)} | ${Utils.escapeHTML(item.difficulty||'Standar')}</span>` : ''}
-                        </div>
-                        <div class="flex gap-2 relative z-10">
-                            <div class="relative inline-block text-left">
-                                <button onclick="UIModule.toggleDropdown('regen-drop-${i}')" class="h-8 px-3 bg-white border border-slate-200 rounded-lg text-slate-500 text-[10px] font-bold hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 flex items-center gap-1 shadow-sm transition-all"><i class="fas fa-sync"></i> REGEN</button>
-                                <div id="regen-drop-${i}" class="hidden absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden">
-                                    <div onclick="CoreLogic.smartRegen(${i},'harder')" class="px-4 py-3 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer border-b border-slate-100"><i class="fas fa-arrow-up mr-2 text-indigo-400"></i>Tingkatkan Kesulitan</div>
-                                    <div onclick="CoreLogic.smartRegen(${i},'easier')" class="px-4 py-3 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer border-b border-slate-100"><i class="fas fa-arrow-down mr-2 text-indigo-400"></i>Turunkan Kesulitan</div>
-                                    <div onclick="CoreLogic.smartRegen(${i},'local')" class="px-4 py-3 text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer"><i class="fas fa-map-marker-alt mr-2 text-indigo-400"></i>Konteks Lokal</div>
-                                </div>
-                            </div>
-                            <button onclick="CoreLogic.enableEdit(${i})" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 shadow-sm transition-all" title="Edit Soal"><i class="fas fa-edit"></i></button>
-                            <button onclick="CoreLogic.copyText(this,'${safeTanya}')" class="w-8 h-8 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-green-600 hover:bg-green-50 hover:border-green-200 shadow-sm transition-all" title="Salin Soal"><i class="fas fa-copy"></i></button>
-                        </div>
-                    </div>
-                    <div id="tanya-container-${i}" class="relative z-0">
-                        <p class="text-base font-bold text-slate-900 leading-relaxed">${safeTanya}</p>
-                    </div>
-                    <div class="relative z-0">${visualHtml}</div>
-                    <div class="relative z-0">${opsiHtml}</div>
-                    ${safeBahas ? `<div class="mt-4 pt-4 border-t border-slate-100 relative z-0">
-                        <p class="text-xs font-extrabold text-slate-500 uppercase mb-2"><i class="fas fa-lightbulb text-amber-400 mr-1"></i>Pembahasan / Rubrik Penilaian</p>
-                        <p class="text-sm text-slate-600 leading-relaxed">${safeBahas}</p>
-                    </div>` : ''}
-                </div>`;
-            });
-            requestAnimationFrame(() => { area.innerHTML = htmlBuffer; });
-        } catch(e) {
-            console.error('[renderSoalFromState] Error:', e);
-        }
-    },
-    renderCardResult: function(url, title, desc, icon, colorTheme) {
-        const area = document.getElementById('render-area');
-        document.getElementById('export-actions').innerHTML = '';
-        const safeUrl = url && url !== '#' ? encodeURI(url) : '#';
-        area.innerHTML = `<div class="glass-card p-10 lg:p-16 text-center border-slate-200">
-            <div class="w-28 h-28 bg-${colorTheme}-50 text-${colorTheme}-500 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-${colorTheme}-100 shadow-inner">
-                <i class="${icon} text-5xl"></i>
+          {listJadwal.length === 0 ? (
+            <div className="bg-white p-8 rounded-3xl shadow-sm text-center border border-gray-100 flex flex-col items-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <Bus className="text-gray-300" size={32} />
+              </div>
+              <p className="font-bold text-gray-700 text-base mb-1">{guruData?.keterangan_hari}</p>
+              <p className="text-gray-400 text-sm">Tidak ada rute kunjungan objek yang tercatat untuk hari ini.</p>
             </div>
-            <h4 class="font-extrabold text-3xl text-slate-900 tracking-tight">${Utils.escapeHTML(title)}</h4>
-            <p class="text-slate-500 font-medium mt-3 mb-10 max-w-md mx-auto leading-relaxed">${Utils.escapeHTML(desc)}</p>
-            ${safeUrl !== '#' ? `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-3 bg-${colorTheme}-500 hover:bg-${colorTheme}-600 text-white px-10 py-5 rounded-2xl font-bold text-lg shadow-xl shadow-${colorTheme}-500/30 transition-transform active:scale-95 animate-subtle-bounce"><i class="fas fa-external-link-alt"></i>Buka File di Drive</a>`
-            : `<p class="text-slate-400 text-sm">(Mode Pratinjau — file tidak dibuat)</p>`}
-        </div>`;
-    },
-    renderHistoryItems: function(container, items) {
-        if (!items || items.length === 0) {
-            container.innerHTML = '<div class="text-center py-12 border-2 border-dashed border-slate-300 bg-slate-50 rounded-2xl"><i class="fas fa-folder-open text-4xl text-slate-300 mb-4 block"></i><p class="text-base font-bold text-slate-500">Belum ada riwayat file tersimpan.</p></div>';
-            return;
-        }
-        container.innerHTML = items.map(item => {
-            let icon  = 'file-word', color = 'blue';
-            if (item.tipe === 'SLIDE') { icon = 'chalkboard'; color = 'amber'; }
-            else if (item.tipe === 'LKPD') { icon = 'book-open'; color = 'purple'; }
-            const safeUrl = item.url ? encodeURI(item.url) : '#';
-            return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="glass-card p-5 flex items-center justify-between hover:border-indigo-400 hover:shadow-md transition-all group border-slate-200">
-                <div class="flex items-center gap-5">
-                    <div class="w-14 h-14 bg-${color}-50 text-${color}-600 rounded-2xl flex items-center justify-center border border-${color}-100"><i class="fas fa-${icon} text-xl"></i></div>
-                    <div>
-                        <p class="text-base font-extrabold text-slate-800 group-hover:text-indigo-600 transition-colors">${Utils.escapeHTML(item.nama)}</p>
-                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-2"><span class="bg-slate-100 px-2 py-0.5 rounded text-slate-500">${Utils.escapeHTML(item.tipe)}</span> • ${Utils.escapeHTML(item.diubah)}</p>
+          ) : (
+            <div className="space-y-4">
+              {listJadwal.map((item, idx) => {
+                if (item.type === 'perjalanan') {
+                  return (
+                    <div key={`perjalanan-${idx}`} className="flex items-center p-3 text-xs text-gray-500 font-medium italic mx-4 border-l-2 border-dashed border-gray-300 ml-8 pl-4">
+                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center mr-3 border border-gray-200">
+                        <Bus size={12} className="text-gray-400" />
+                      </div>
+                      <span className="flex-1">{item.nama_objek}</span>
+                      <span className="font-semibold bg-gray-100 px-2 py-0.5 rounded ml-2">{item.jam_mulai} - {item.jam_selesai}</span>
                     </div>
+                  );
+                }
+
+                const isSelesai = guruData?.log_selesai?.includes(item.nama_objek);
+                return (
+                  <div key={idx} className={`relative bg-white rounded-[1.5rem] p-5 shadow-sm border overflow-hidden transition-all duration-300 ${isSelesai ? 'border-green-200 bg-green-50/40' : 'border-gray-100 hover:border-blue-200 hover:shadow-md'}`}>
+                    {isSelesai && <div className="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-black px-4 py-1.5 rounded-bl-xl tracking-widest shadow-sm">SELESAI</div>}
+                    <div className="flex justify-between items-start mb-3 pr-8">
+                      <h4 className={`font-bold ${isSelesai ? 'text-green-800' : 'text-gray-800'} text-lg leading-tight`}>{item.nama_objek}</h4>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-5">
+                      <span className="text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-lg">Masuk: {item.jam_masuk}</span>
+                      <span className="text-xs font-bold bg-orange-50 text-orange-700 border border-orange-100 px-2.5 py-1 rounded-lg">Keluar: {item.jam_keluar || '-'}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      <button
+                        onClick={() => { setActiveObjek(item); setTipeAksi('IN'); setCaraPresensi('Scan QR'); setScanError(null); setCapturedImage(null); setStep('scan'); }}
+                        className={`py-3 rounded-xl font-bold text-sm flex items-center justify-center transition-transform active:scale-95 shadow-sm ${isSelesai ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'}`}
+                      >
+                        <Camera size={16} className="mr-2" /> Scan IN
+                      </button>
+                      <button
+                        onClick={() => { setActiveObjek(item); setTipeAksi('OUT'); setCaraPresensi('Scan QR'); setScanError(null); setCapturedImage(null); setStep('scan'); }}
+                        className="py-3 rounded-xl font-bold text-sm flex items-center justify-center bg-white border-2 border-orange-200 text-orange-600 hover:bg-orange-50 transition-transform active:scale-95 shadow-sm"
+                      >
+                        <LogOut size={16} className="mr-2" /> Scan OUT
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderEditSiswaView = () => (
+    <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-20">
+      <div className="w-full bg-white p-4 flex items-center justify-between shadow-sm sticky top-0 z-10 border-b mb-6">
+        <div className="flex items-center">
+          <button onClick={() => setStep('dashboard')} className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full mr-2 transition-colors">
+            <ArrowLeft size={24} />
+          </button>
+          <h2 className="font-bold text-gray-800 text-lg">Edit Anggota Siswa</h2>
+        </div>
+        <button onClick={addSiswa} className="text-blue-600 p-2 hover:bg-blue-50 rounded-full transition-colors">
+          <PlusCircle size={24} />
+        </button>
+      </div>
+
+      <div className="px-5 space-y-3">
+        <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 mb-6 text-sm text-blue-800 leading-relaxed shadow-sm">
+          <Info size={16} className="inline mr-2 mb-0.5 text-blue-600" />
+          Ubah nama atau daerah jika ada kesalahan data dari panitia, atau tambah/hapus siswa yang pindah kelompok.
+        </div>
+
+        {siswaForm.map((s, idx) => (
+          <div key={idx} className="flex gap-3 items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100 relative group transition-all hover:border-blue-200">
+            <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-gray-100 text-gray-500 font-bold text-xs rounded-full flex items-center justify-center border border-white shadow-sm">
+              {idx + 1}
+            </div>
+            <div className="flex flex-col flex-1 gap-3 ml-2">
+              <input
+                value={s.nama}
+                onChange={(e) => handleSiswaChange(idx, 'nama', e.target.value)}
+                className="w-full p-3 text-sm font-semibold border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                placeholder="Nama Lengkap Siswa"
+              />
+              <div className="flex gap-2">
+                <select
+                  value={s.jk}
+                  onChange={(e) => handleSiswaChange(idx, 'jk', e.target.value)}
+                  className="w-1/3 p-2.5 text-xs font-medium border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="Putra">Putra</option>
+                  <option value="Putri">Putri</option>
+                </select>
+                <input
+                  value={s.daerah}
+                  onChange={(e) => handleSiswaChange(idx, 'daerah', e.target.value)}
+                  className="flex-1 p-2.5 text-xs font-medium border border-gray-200 rounded-xl bg-gray-50 text-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Asal Daerah"
+                />
+              </div>
+            </div>
+            <button onClick={() => removeSiswa(idx)} className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors shrink-0">
+              <Trash2 size={20} />
+            </button>
+          </div>
+        ))}
+
+        {siswaForm.length === 0 && (
+          <div className="text-center py-10 bg-white rounded-2xl border border-gray-100 border-dashed">
+            <Users className="mx-auto text-gray-300 mb-3" size={32} />
+            <p className="text-gray-400 text-sm">Belum ada data siswa.</p>
+          </div>
+        )}
+
+        <button
+          onClick={submitEditSiswa}
+          disabled={isLoading}
+          className="w-full mt-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all flex justify-center items-center text-lg disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {isLoading
+            ? <><Sparkles className="animate-spin mr-2" size={20} /> Menyimpan...</>
+            : <><Save className="mr-2" size={20} /> Simpan Perubahan</>
+          }
+        </button>
+      </div>
+    </div>
+  );
+
+  // renderScannerView TIDAK mengandung useEffect lagi (sudah dipindah ke atas)
+  const renderScannerView = () => (
+    <div className="max-w-md mx-auto min-h-screen bg-gray-50 flex flex-col items-center">
+      <div className="w-full bg-white p-4 flex items-center shadow-sm sticky top-0 z-10 border-b">
+        <button onClick={() => setStep('dashboard')} className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full mr-2">
+          <ArrowLeft size={24} />
+        </button>
+        <div>
+          <h2 className="font-bold text-gray-800 text-lg leading-tight flex items-center">
+            Presensi{' '}
+            <span className={`ml-2 px-2 py-0.5 rounded text-xs font-black text-white ${tipeAksi === 'IN' ? 'bg-blue-600' : 'bg-orange-500'}`}>
+              {tipeAksi}
+            </span>
+          </h2>
+          <p className="text-xs font-medium text-gray-500 mt-0.5">{activeObjek?.nama_objek}</p>
+        </div>
+      </div>
+
+      <div className="w-full px-5 py-6">
+        {/* Toggle Scan QR / Kamera Depan */}
+        <div className="flex bg-gray-200/70 p-1.5 rounded-2xl mb-6 shadow-inner">
+          <button
+            onClick={() => { setCaraPresensi('Scan QR'); setCapturedImage(null); setScanError(null); }}
+            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${caraPresensi === 'Scan QR' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
+          >
+            Scan QR
+          </button>
+          <button
+            onClick={() => setCaraPresensi('Manual Selfi')}
+            className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${caraPresensi === 'Manual Selfi' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'}`}
+          >
+            Kamera Depan
+          </button>
+        </div>
+
+        {caraPresensi === 'Scan QR' ? (
+          <div className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-gray-100 text-center">
+            {/* Elemen div#qr-reader selalu ada saat caraPresensi = Scan QR */}
+            <div id="qr-reader" className="w-full overflow-hidden rounded-2xl border-0 shadow-inner bg-gray-50"></div>
+
+            {scanError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-left">
+                <p className="text-red-700 text-xs font-semibold">{scanError}</p>
+              </div>
+            )}
+
+            <p className="text-sm font-medium text-gray-500 mt-5 mb-5">
+              Arahkan kamera ke QR Code yang dipegang panitia di lokasi.
+            </p>
+
+            <div className="border-t border-dashed border-gray-200 pt-5 mt-2">
+              <p className="text-xs font-semibold text-gray-400 mb-3">Kamera bermasalah atau buru-buru?</p>
+              <button
+                onClick={() => { setCaraPresensi('Manual Bypass'); setStep('confirm'); }}
+                className="w-full py-3.5 bg-orange-50 border border-orange-200 text-orange-700 font-bold rounded-xl hover:bg-orange-100 transition-colors flex justify-center items-center shadow-sm"
+              >
+                <Edit3 size={18} className="mr-2" /> Presensi Manual (Lewati Kamera)
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white p-5 rounded-[1.5rem] shadow-sm border border-gray-100 flex flex-col items-center">
+            {!capturedImage ? (
+              <>
+                <video ref={videoRef} autoPlay playsInline className="w-full rounded-2xl bg-black mb-5 aspect-[3/4] object-cover shadow-inner"></video>
+                <canvas ref={canvasRef} className="hidden"></canvas>
+                <button onClick={simpanSelfie} className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 flex justify-center items-center">
+                  <Camera size={20} className="mr-2" /> Ambil Foto Kelompok
+                </button>
+              </>
+            ) : (
+              <>
+                <img src={capturedImage} alt="Selfie" className="w-full rounded-2xl mb-5 aspect-[3/4] object-cover shadow-sm" />
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setCapturedImage(null)}
+                    className="flex-1 py-3.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                  >
+                    Ulang Foto
+                  </button>
+                  <button
+                    onClick={() => setStep('confirm')}
+                    className="flex-[1.5] py-3.5 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition-colors"
+                  >
+                    Lanjut ke Konfirmasi
+                  </button>
                 </div>
-                <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm"><i class="fas fa-arrow-right text-sm"></i></div>
-            </a>`;
-        }).join('');
-    }
-};
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
-// ==========================================
-// CORE LOGIC
-// ==========================================
-const CoreLogic = {
-    runProcess: async function() {
-        const btn     = document.getElementById('btn-generate');
-        const btnText = document.getElementById('btn-text');
-        const topik   = (document.getElementById('topik').value || '').trim();
-        if (!topik) {
-            UIModule.showToast('Topik materi tidak boleh kosong!', 'fas fa-exclamation-circle');
-            return;
-        }
+  const renderConfirmView = () => {
+    const isLate = tipeAksi === 'IN' && cekKetepatanWaktuUI(activeObjek?.jam_masuk) === 'Terlambat';
+    return (
+      <div className="max-w-md mx-auto min-h-screen bg-gray-50 pb-20">
+        <div className="w-full bg-white p-4 flex items-center shadow-sm sticky top-0 z-10 border-b mb-6">
+          <button onClick={() => setStep('scan')} className="p-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-full mr-2">
+            <ArrowLeft size={24} />
+          </button>
+          <h2 className="font-bold text-gray-800 text-lg">Konfirmasi Presensi</h2>
+        </div>
 
-        let refValue = '';
-        const refInput = document.getElementById('ref-text-val');
-        if (refInput) refValue = refInput.value.trim();
+        <div className="px-5 space-y-5">
+          <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-gray-100">
+            <div className="flex items-start justify-between border-b border-gray-100 pb-4 mb-4">
+              <div>
+                <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">Nama Objek</label>
+                <p className="font-black text-gray-800 text-lg leading-tight">{activeObjek?.nama_objek}</p>
+              </div>
+              <span className={`px-3 py-1 rounded-lg text-xs font-black text-white shadow-sm mt-1 ${tipeAksi === 'IN' ? 'bg-blue-600' : 'bg-orange-500'}`}>{tipeAksi}</span>
+            </div>
 
-        btn.disabled         = true;
-        btnText.innerHTML    = '<i class="fas fa-sync fa-spin text-lg"></i><span> MEMPROSES...</span>';
-        UIModule.showToast('⏳ AI sedang merancang konten untuk Anda...', 'fas fa-wand-magic-sparkles fa-spin');
+            <div className="mb-6 bg-gray-50 p-3 rounded-xl border border-gray-100 flex justify-between items-center">
+              <label className="text-xs text-gray-500 font-bold">Target {tipeAksi === 'IN' ? 'Masuk' : 'Keluar'} Jadwal</label>
+              <p className="font-black text-gray-800 bg-white px-2.5 py-1 rounded shadow-sm border border-gray-200">
+                {tipeAksi === 'IN' ? activeObjek?.jam_masuk : activeObjek?.jam_keluar} WIB
+              </p>
+            </div>
 
-        // Set flag proses aktif
-        _generateInProgress = true;
-        _generateModeActive = StateModule.currentMode;
-        UIModule.updateGenerateStatusBar();
+            {isLate && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start shadow-sm">
+                <AlertTriangle size={20} className="text-red-500 mr-3 mt-0.5 shrink-0" />
+                <div className="w-full">
+                  <p className="text-sm font-bold text-red-700 mb-2">Kelompok Terlambat Masuk</p>
+                  <textarea
+                    value={alasanTerlambat}
+                    onChange={(e) => setAlasanTerlambat(e.target.value)}
+                    placeholder="Tuliskan alasan keterlambatan rombongan..."
+                    className="w-full text-sm font-medium p-3 rounded-xl border border-red-200 focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white transition-all shadow-inner"
+                    rows="2"
+                  ></textarea>
+                </div>
+              </div>
+            )}
 
-        document.getElementById('view-empty').classList.add('hidden');
-        document.getElementById('view-result').classList.remove('hidden');
+            <div className="mb-2">
+              <label className="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-3">Kondisi Anggota Kelompok</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setKondisiKelompok('Lengkap')}
+                  className={`py-3 text-sm font-bold rounded-xl border-2 transition-all shadow-sm ${kondisiKelompok === 'Lengkap' ? 'bg-blue-50 border-blue-600 text-blue-700' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50 hover:border-gray-200'}`}
+                >
+                  Lengkap
+                </button>
+                <button
+                  onClick={() => setKondisiKelompok('Tidak Lengkap')}
+                  className={`py-3 text-sm font-bold rounded-xl border-2 transition-all shadow-sm ${kondisiKelompok === 'Tidak Lengkap' ? 'bg-orange-50 border-orange-500 text-orange-700' : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50 hover:border-gray-200'}`}
+                >
+                  Sakit / Izin
+                </button>
+              </div>
+            </div>
+          </div>
 
-        if (StateModule.currentMode === 'SOAL') {
-            UIModule.showSkeletonLoader();
-        } else {
-            document.getElementById('render-area').innerHTML = '<div class="text-center py-20"><i class="fas fa-circle-notch fa-spin text-4xl text-indigo-500 mb-4 block"></i><p class="font-bold text-slate-500">Merancang Dokumen...</p></div>';
-        }
-
-        const params = {
-            fitur:  StateModule.currentMode,
-            params: {
-                topik:     topik,
-                jenjang:   document.getElementById('kelas').value,
-                jumlah:    document.getElementById('jumlah') ? parseInt(document.getElementById('jumlah').value) || 5 : 5,
-                tp:        document.getElementById('tp').value,
-                tingkat:   document.getElementById('tingkat') ? document.getElementById('tingkat').value : 'HOTS',
-                rasio:     document.getElementById('ratio') ? document.getElementById('ratio').value : 50,
-                tipe:      document.getElementById('tipe-soal') ? document.getElementById('tipe-soal').value : 'PG4',
-                kurikulum: document.getElementById('kurikulum') ? document.getElementById('kurikulum').value : 'KUMER',
-                visuals:   document.getElementById('include-visuals') ? document.getElementById('include-visuals').checked : false,
-                referensi: refValue
+          <button
+            onClick={submitPresensi}
+            disabled={isLoading}
+            className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transition-all flex justify-center items-center text-lg disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {isLoading
+              ? <><Sparkles className="animate-spin mr-2" size={20} /> Memproses...</>
+              : 'Kirim Laporan Presensi'
             }
-        };
+          </button>
+        </div>
+      </div>
+    );
+  };
 
-        try {
-            const modeSnapshot = StateModule.currentMode;
-            const res = await APIModule.call(params);
-            this.handleSuccess(res, modeSnapshot);
-        } catch(e) {
-            this.handleError(e.message);
-        }
-    },
+  const renderResultView = () => (
+    <div className="flex flex-col items-center justify-center min-h-screen px-6 bg-gradient-to-b from-green-50 to-white text-center">
+      <div className={`w-28 h-28 rounded-full flex items-center justify-center mb-6 shadow-xl ${statusMessage.type === 'warning' ? 'bg-gradient-to-br from-orange-100 to-orange-200 text-orange-500' : 'bg-gradient-to-br from-green-100 to-green-200 text-green-600'}`}>
+        {statusMessage.type === 'warning' ? <AlertTriangle size={56} /> : <CheckCircle size={56} />}
+      </div>
+      <h2 className="text-3xl font-black text-gray-800 mb-3 tracking-tight">Data Tersimpan!</h2>
+      <p className="text-gray-500 mb-10 max-w-xs font-medium leading-relaxed">{statusMessage.text}</p>
+      <button
+        onClick={() => { setStep('dashboard'); setCapturedImage(null); setAlasanTerlambat(''); setCaraPresensi('Scan QR'); }}
+        className="px-10 py-4 bg-white border-2 border-gray-200 text-gray-700 font-bold rounded-2xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm active:scale-95"
+      >
+        Kembali ke Rute Kunjungan
+      </button>
+    </div>
+  );
 
-    handleSuccess: function(res, completedMode) {
-        document.getElementById('btn-generate').disabled  = false;
-        document.getElementById('btn-text').innerText     = 'BUAT SEKARANG';
+  // ==========================================
+  // RENDER UTAMA
+  // ==========================================
+  return (
+    <ErrorBoundary>
+      <div className="bg-gray-100 min-h-screen font-sans antialiased text-gray-800 selection:bg-blue-200">
+        {step === 'login' && renderLoginView()}
+        {step === 'dashboard' && renderDashboardView()}
+        {step === 'edit_siswa' && renderEditSiswaView()}
+        {step === 'scan' && renderScannerView()}
+        {step === 'confirm' && renderConfirmView()}
+        {step === 'result' && renderResultView()}
+      </div>
+    </ErrorBoundary>
+  );
+}
 
-        // Clear flag proses generate
-        _generateInProgress = false;
-        _generateModeActive = null;
-        UIModule.hideGenerateStatusBar();
-
-        // Gunakan mode saat generate dimulai (bukan mode saat ini, kalau pengguna pindah menu)
-        const modeHasil = completedMode || StateModule.currentMode;
-
-        if (!res) {
-            document.getElementById('render-area').innerHTML = '';
-            return;
-        }
-        if (res.status === 'LIMIT_REACHED') {
-            document.getElementById('render-area').innerHTML = '';
-            document.getElementById('view-result').classList.add('hidden');
-            document.getElementById('view-empty').classList.remove('hidden');
-            return UIModule.showUpgradeModal();
-        }
-        if (res.status === 'error') {
-            document.getElementById('render-area').innerHTML = '';
-            return UIModule.showToast('❌ ' + res.msg, 'fas fa-times-circle');
-        }
-
-        APIModule.call({ fitur: 'PROFILE' }).then(p => {
-            if (p && p.status === 'success') UIModule.updateProfileUI(p.data);
-        });
-
-        // Jika pengguna sudah pindah menu, tampilkan toast saja + switch balik ke menu hasil
-        if (modeHasil !== StateModule.currentMode) {
-            UIModule.showToast('✅ ' + (res.msg || 'Selesai!') + ' — Klik untuk lihat hasil.', 'fas fa-check-circle');
-            // Simpan data dulu, pengguna bisa klik menu untuk lihat
-            if (modeHasil === 'SOAL' && res.data) {
-                StateModule.appState.soalData = res.data;
-                StateModule.save();
-            }
-            return;
-        }
-
-        // Pengguna masih di menu yang sama — render hasil normal
-        if (modeHasil === 'SOAL') {
-            StateModule.appState.soalData = res.data;
-            StateModule.save();
-            document.getElementById('result-type-label').innerText = 'BUTIR SOAL';
-            UIModule.renderSoalFromState();
-        } else if (modeHasil === 'SLIDE') {
-            document.getElementById('result-type-label').innerText = 'SLIDE PRESENTASI';
-            UIModule.renderCardResult(res.url, 'Slide Presentasi Siap!', 'File presentasi Anda berhasil dirancang di Google Slides.', 'fas fa-chalkboard', 'amber');
-        } else if (modeHasil === 'LKPD') {
-            document.getElementById('result-type-label').innerText = 'MODUL / RPP';
-            UIModule.renderCardResult(res.url, 'Modul / RPP Siap!', 'Rancangan Modul Ajar & LKPD komprehensif telah tersimpan di Google Drive.', 'fas fa-book-open', 'purple');
-        }
-
-        UIModule.showToast('✅ ' + (res.msg || 'Berhasil!'), 'fas fa-check-circle');
-        if (window.innerWidth < 1024) document.getElementById('view-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    },
-
-    handleError: function(err) {
-        document.getElementById('btn-generate').disabled = false;
-        document.getElementById('btn-text').innerText    = 'BUAT SEKARANG';
-        _generateInProgress = false;
-        _generateModeActive = null;
-        UIModule.hideGenerateStatusBar();
-        document.getElementById('render-area').innerHTML = '<div class="text-center py-10 text-red-500 font-bold"><i class="fas fa-exclamation-triangle text-3xl mb-2 block"></i>Gagal Memuat.</div>';
-        UIModule.showToast('❌ ' + err, 'fas fa-exclamation-triangle');
-    },
-
-    enableEdit: function(index) {
-        const container  = document.getElementById('tanya-container-' + index);
-        const currentText = StateModule.appState.soalData[index].tanya;
-        container.innerHTML = `<textarea id="edit-input-${index}" class="edit-input" rows="3">${Utils.escapeHTML(currentText)}</textarea>
-            <div class="flex gap-2 mt-2">
-                <button onclick="CoreLogic.saveEdit(${index})" class="bg-indigo-600 text-white text-xs font-bold px-4 py-2 rounded-lg shadow hover:bg-indigo-700">Simpan</button>
-                <button onclick="UIModule.renderSoalFromState()" class="bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-slate-300">Batal</button>
-            </div>`;
-    },
-
-    saveEdit: function(index) {
-        const input = document.getElementById('edit-input-' + index);
-        if (input) StateModule.appState.soalData[index].tanya = input.value;
-        StateModule.save();
-        UIModule.showToast('Perubahan berhasil disimpan.', 'fas fa-check');
-        UIModule.renderSoalFromState();
-    },
-
-    smartRegen: async function(index, type) {
-        document.getElementById('regen-drop-' + index).classList.add('hidden');
-        const card = document.getElementById('card-soal-' + index);
-        card.insertAdjacentHTML('beforeend', `<div id="loading-overlay-${index}" class="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-30 rounded-2xl"><i class="fas fa-circle-notch fa-spin text-indigo-600 text-4xl mb-3"></i><p class="text-sm font-extrabold text-indigo-900">Merancang Ulang AI...</p></div>`);
-        try {
-            const res = await APIModule.call({ fitur: 'REGENERATE', params: { dataLama: StateModule.appState.soalData[index], tipeRegen: type } });
-            const overlay = document.getElementById('loading-overlay-' + index);
-            if (overlay) overlay.remove();
-            if (res && res.status === 'LIMIT_REACHED') return UIModule.showUpgradeModal();
-            if (res && res.status === 'error') throw new Error(res.msg);
-            APIModule.call({ fitur: 'PROFILE' }).then(p => { if (p && p.status === 'success') UIModule.updateProfileUI(p.data); });
-            StateModule.appState.soalData[index] = res.data;
-            StateModule.save();
-            UIModule.renderSoalFromState();
-            UIModule.showToast('✅ Soal berhasil diperbarui!', 'fas fa-check-circle');
-        } catch(err) {
-            const overlay = document.getElementById('loading-overlay-' + index);
-            if (overlay) overlay.remove();
-            UIModule.showToast('❌ Gagal: ' + err.message, 'fas fa-times');
-        }
-    },
-
-    exportReal: async function(type) {
-        const exportBtns = document.querySelectorAll('#export-actions button');
-        exportBtns.forEach(btn => { btn.disabled = true; btn.classList.add('opacity-50','cursor-not-allowed'); });
-
-        const labelMap  = { DOC:'Word (.docx)', PDF:'PDF', FORM:'Google Form' };
-        const labelTipe = labelMap[type] || type;
-        const overlayId = 'export-loading-overlay';
-        const oldOverlay = document.getElementById(overlayId);
-        if (oldOverlay) oldOverlay.remove();
-
-        const overlay = document.createElement('div');
-        overlay.id    = overlayId;
-        overlay.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[90] flex items-center justify-center';
-        overlay.innerHTML = `
-            <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-[90%] text-center border-t-4 border-indigo-500">
-                <div class="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-circle-notch fa-spin text-indigo-600 text-3xl"></i>
-                </div>
-                <h3 class="text-lg font-extrabold text-slate-800 mb-2">Menyiapkan File ${labelTipe}</h3>
-                <p id="export-progress-msg" class="text-sm text-slate-500 font-medium leading-relaxed">Menghubungi server...</p>
-                <div class="mt-4 bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div id="export-progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-700" style="width:10%"></div>
-                </div>
-                <p class="text-[10px] text-slate-400 mt-3 font-medium">Proses ini mungkin memakan 30-90 detik<br>karena gambar sedang disisipkan ke dokumen.</p>
-            </div>`;
-        document.body.appendChild(overlay);
-
-        const setProgress = (pct, msg) => {
-            const bar = document.getElementById('export-progress-bar');
-            const txt = document.getElementById('export-progress-msg');
-            if (bar) bar.style.width = pct + '%';
-            if (txt) txt.innerText = msg;
-        };
-
-        const t1 = setTimeout(() => setProgress(30, 'AI sedang menyusun dokumen...'), 4000);
-        const t2 = setTimeout(() => setProgress(50, 'Mengunduh dan menyisipkan gambar...'), 12000);
-        const t3 = setTimeout(() => setProgress(70, 'Menyimpan ke Google Drive Anda...'), 30000);
-        const t4 = setTimeout(() => setProgress(88, 'Hampir selesai, mohon ditunggu...'), 55000);
-        const clearAll = () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-
-        const reEnableBtn = () => {
-            exportBtns.forEach(btn => { btn.disabled = false; btn.classList.remove('opacity-50','cursor-not-allowed'); });
-        };
-
-        try {
-            const res = await APIModule.call({
-                fitur:  'EXPORT',
-                params: { type: type, data: StateModule.appState.soalData, topik: (document.getElementById('topik').value || 'Materi') }
-            });
-            clearAll();
-            setProgress(100, 'Selesai!');
-            setTimeout(() => { const o = document.getElementById(overlayId); if (o) o.remove(); }, 500);
-            reEnableBtn();
-
-            if (res.status === 'LIMIT_REACHED') return UIModule.showUpgradeModal();
-            if (res.status === 'error') throw new Error(res.msg);
-            APIModule.call({ fitur: 'PROFILE' }).then(p => { if (p && p.status === 'success') UIModule.updateProfileUI(p.data); });
-            UIModule.showExportSuccess(type, res.url, labelTipe);
-        } catch(err) {
-            clearAll();
-            const o = document.getElementById(overlayId); if (o) o.remove();
-            reEnableBtn();
-            UIModule.showToast('❌ Gagal ekspor: ' + err.message, 'fas fa-times-circle');
-        }
-    },
-
-    fetchHistory: async function() {
-        const list = document.getElementById('history-list');
-        list.innerHTML = Array(4).fill(0).map(() => '<div class="shimmer h-20 rounded-2xl w-full border border-slate-200"></div>').join('');
-        try {
-            const res = await APIModule.call({ fitur: 'RIWAYAT' });
-            if (res && res.status === 'error') throw new Error(res.msg);
-            UIModule.renderHistoryItems(list, res ? res.data : []);
-        } catch(err) {
-            list.innerHTML = `<div class="text-center py-12 border-2 border-dashed border-slate-300 bg-slate-50 text-red-500 rounded-2xl"><i class="fas fa-times-circle text-4xl mb-4 block"></i><p class="text-base font-bold mb-2">Gagal memuat riwayat.</p><p class="text-xs text-slate-500">${Utils.escapeHTML(err.message)}</p></div>`;
-        }
-    },
-
-    copyText: function(btn, text) {
-        const cleanText = String(text).replace(/<br>/g, '\n');
-        Utils.copyToClipboard(cleanText).then(() => {
-            const icon = btn.querySelector('i');
-            if (icon) icon.className = 'fas fa-check text-green-600';
-            btn.classList.add('bg-green-50','border-green-200');
-            setTimeout(() => {
-                if (icon) icon.className = 'fas fa-copy';
-                btn.classList.remove('bg-green-50','border-green-200');
-            }, 1500);
-            UIModule.showToast('Teks disalin ke clipboard!', 'fas fa-check-circle');
-        }).catch(() => {
-            UIModule.showToast('Gagal menyalin otomatis. Harap seleksi manual.', 'fas fa-times');
-        });
-    }
-};
-
-// ==========================================
-// INIT — dipanggil saat halaman selesai dimuat
-// ==========================================
-window.onload = function() {
-    StateModule.init();
-    // FIX: checkExistingSession sekarang dipanggil agar nama user bisa tampil walau token sudah expired
-    AuthModule.checkExistingSession();
-    // Jika Google GIS sudah selesai dimuat sebelum window.onload (jarang, tapi bisa terjadi)
-    if (typeof google !== 'undefined' && google.accounts && !tokenClient) {
-        AuthModule.init();
-    }
-};
-</script>
-</body>
-</html>
+export default App;
